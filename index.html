@@ -74,8 +74,8 @@
 
   .stage{
     position:relative; z-index:2;
-    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
-    gap:26px; max-width:1180px; margin:10px auto 60px; padding:0 20px;
+    display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:center;
+    gap:26px; max-width:1180px; margin:10px auto 30px; padding:0 20px;
   }
 
   .chart-wrap{
@@ -85,11 +85,18 @@
   svg{ width:100%; height:100%; overflow:visible; }
 
   .seg{
-    cursor:pointer; transition:opacity .35s ease, filter .35s ease, transform .35s ease;
-    transform-origin:300px 300px;
+    cursor:pointer; transition:opacity .35s ease, filter .35s ease, transform .45s cubic-bezier(.2,.8,.2,1);
+    transform-box:fill-box; transform-origin:center;
   }
-  .seg.dim{ opacity:.28; }
-  .seg.active{ filter:drop-shadow(0 0 10px var(--glow-cyan)) drop-shadow(0 0 22px var(--glow-blue)); }
+  .seg.dim{ opacity:.22; }
+  .seg.active{ filter:drop-shadow(0 0 10px var(--glow-cyan)) drop-shadow(0 0 26px var(--glow-blue)); }
+  .seg:hover{ filter:drop-shadow(0 0 8px var(--glow-cyan)); }
+
+  @keyframes segIn{
+    from{ opacity:0; transform:scale(.85); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  .seg-enter{ animation:segIn .6s cubic-bezier(.2,.8,.2,1) backwards; }
 
   .seg-label{
     font-family:var(--font-mono); font-size:10.5px; fill:var(--text-hi);
@@ -125,10 +132,11 @@
   }
 
   .panel{
-    width:340px; max-width:92vw; min-height:420px;
+    width:340px; max-width:92vw;
     background:var(--panel); border:1px solid var(--panel-border);
     border-radius:18px; padding:26px 24px; backdrop-filter:blur(14px);
     box-shadow:0 0 40px rgba(47,141,255,.10), inset 0 0 40px rgba(79,227,255,.03);
+    align-self:flex-start;
   }
   .panel-eyebrow{
     font-family:var(--font-mono); font-size:10px; letter-spacing:.25em; color:var(--glow-cyan);
@@ -151,8 +159,33 @@
     font-family:var(--font-mono); font-size:10px; color:var(--glow-cyan);
     width:20px; flex-shrink:0;
   }
+  .organ-list li:hover{
+    background:rgba(79,227,255,0.11); border-color:rgba(79,227,255,0.3);
+    transform:translateX(2px);
+  }
   @keyframes slidein{ to{ opacity:1; transform:translateX(0);} }
-  .placeholder{ color:var(--text-lo); font-size:13.5px; line-height:1.6; padding-top:8px; }
+  .placeholder{ color:var(--text-lo); font-size:13.5px; line-height:1.6; padding-top:8px; margin-bottom:18px;}
+  .stat-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:10px 0; border-top:1px solid rgba(79,227,255,0.1);
+    font-size:12.5px; color:var(--text-lo);
+  }
+  .stat-row b{ color:var(--text-hi); font-weight:500; font-size:13px; }
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:8px 14px; justify-content:center;
+    max-width:760px; margin:6px auto 0; padding:0 20px; position:relative; z-index:2;
+  }
+  .legend-item{
+    display:flex; align-items:center; gap:6px; font-family:var(--font-mono);
+    font-size:10.5px; color:var(--text-lo); cursor:pointer; transition:color .2s ease;
+    padding:4px 2px;
+  }
+  .legend-item:hover, .legend-item.active-legend{ color:var(--text-hi); }
+  .legend-dot{
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+    box-shadow:0 0 6px currentColor;
+  }
 
   footer{
     position:relative; z-index:2; text-align:center; color:var(--text-lo);
@@ -182,7 +215,7 @@
 
 <div class="stage">
   <div class="chart-wrap">
-    <svg id="chart" viewBox="0 0 600 600"></svg>
+    <svg id="chart" viewBox="-40 -40 680 680"></svg>
   </div>
 
   <div class="panel" id="panel">
@@ -192,6 +225,8 @@
     </div>
   </div>
 </div>
+
+<div class="legend" id="legend"></div>
 
 <footer>Click a segment to lock it · click again to release · switch chart above</footer>
 
@@ -245,28 +280,51 @@ function arcPath(rOuter, rInner, startAngle, endAngle){
           A ${rInner} ${rInner} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
 }
 
-function silhouettePath(sex){
+function silhouetteMarkup(sex){
   if(sex === 'female'){
-    return `M300,150
-      c14,0 24,11 24,25 c0,10 -5,18 -12,23 c18,7 30,20 33,44
-      c2,16 -3,30 -12,34 c6,10 8,24 4,38 c14,10 22,28 20,48
-      c-2,22 -14,38 -30,45 c4,14 5,29 2,42 c10,8 15,20 14,33
-      c-1,16 -14,27 -30,27 c-16,0 -29,-11 -30,-27
-      c-1,-13 4,-25 14,-33 c-3,-13 -2,-28 2,-42
-      c-16,-7 -28,-23 -30,-45 c-2,-20 6,-38 20,-48
-      c-4,-14 -2,-28 4,-38 c-9,-4 -14,-18 -12,-34
-      c3,-24 15,-37 33,-44 c-7,-5 -12,-13 -12,-23 c0,-14 10,-25 24,-25 Z`;
+    return `
+    <circle cx="300" cy="166" r="25"/>
+    <path d="M289,188 L289,202 Q300,209 311,202 L311,188 Z"/>
+    <path d="M256,212 C256,206 272,202 300,202 C328,202 344,206 344,212
+      L349,246 C351,258 344,268 332,272 C339,280 342,290 340,300
+      C356,306 366,318 365,332 L362,344 C361,350 356,354 350,352
+      C338,348 322,345 300,345 C278,345 262,348 250,352
+      C244,354 239,350 238,344 L235,332 C234,318 244,306 260,300
+      C258,290 261,280 268,272 C256,268 249,258 251,246 Z"/>
+    <path d="M252,214 C238,220 226,234 222,252 L214,316
+      C213,324 217,330 224,331 C231,332 236,327 237,319
+      L245,260 C247,246 251,234 259,224 Z"/>
+    <path d="M348,214 C362,220 374,234 378,252 L386,316
+      C387,324 383,330 376,331 C369,332 364,327 363,319
+      L355,260 C353,246 349,234 341,224 Z"/>
+    <path d="M262,350 C258,350 255,354 255,360 L248,508
+      C248,516 252,522 260,522 L271,522 C278,522 282,516 282,509
+      L286,366 C286,358 282,351 274,350 Z"/>
+    <path d="M338,350 C342,350 345,354 345,360 L352,508
+      C352,516 348,522 340,522 L329,522 C322,522 318,516 318,509
+      L314,366 C314,358 318,351 326,350 Z"/>`;
   }
-  return `M300,148
-    c15,0 26,12 26,27 c0,9 -4,17 -10,22 c22,4 40,16 46,34
-    c4,12 2,24 -5,32 c8,6 12,16 10,28 c16,6 27,20 27,38
-    c0,20 -13,36 -30,40 c2,14 1,28 -3,40 c9,9 13,21 11,33
-    c-3,17 -18,28 -34,26 c-11,-1 -20,-9 -24,-19
-    c-4,10 -13,18 -24,19 c-16,2 -31,-9 -34,-26
-    c-2,-12 2,-24 11,-33 c-4,-12 -5,-26 -3,-40
-    c-17,-4 -30,-20 -30,-40 c0,-18 11,-32 27,-38
-    c-7,-8 -9,-20 -5,-32 c6,-18 24,-30 46,-34
-    c-6,-5 -10,-13 -10,-22 c0,-15 11,-27 26,-27 Z`;
+  return `
+    <circle cx="300" cy="164" r="27"/>
+    <path d="M286,188 L286,204 Q300,212 314,204 L314,188 Z"/>
+    <path d="M246,214 C246,207 268,202 300,202 C332,202 354,207 354,214
+      L360,254 C362,266 354,276 340,280 C346,290 348,302 344,314
+      C356,320 364,330 364,342 L361,352 C360,358 355,361 349,359
+      C334,354 316,352 300,352 C284,352 266,354 251,359
+      C245,361 240,358 239,352 L236,342 C236,330 244,320 256,314
+      C252,302 254,290 260,280 C246,276 238,266 240,254 Z"/>
+    <path d="M244,216 C228,222 214,238 209,258 L200,326
+      C199,335 204,341 212,342 C220,343 226,337 227,329
+      L236,266 C238,250 243,236 252,225 Z"/>
+    <path d="M356,216 C372,222 386,238 391,258 L400,326
+      C401,335 396,341 388,342 C380,343 374,337 373,329
+      L364,266 C362,250 357,236 348,225 Z"/>
+    <path d="M266,357 C261,357 258,361 258,368 L252,510
+      C252,518 257,524 265,524 L277,524 C284,524 288,518 288,511
+      L290,373 C290,365 286,358 278,357 Z"/>
+    <path d="M334,357 C339,357 342,361 342,368 L348,510
+      C348,518 343,524 335,524 L323,524 C316,524 312,518 312,511
+      L310,373 C310,365 314,358 322,357 Z"/>`;
 }
 
 function render(sex){
@@ -285,7 +343,13 @@ function render(sex){
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
-    </filter>`;
+    </filter>
+    ${systems.map((s,i)=>`
+      <radialGradient id="grad${i}" cx="50%" cy="50%" r="75%">
+        <stop offset="0%" stop-color="${s.color}" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="${s.color}" stop-opacity="0.16"/>
+      </radialGradient>`).join('')}
+  `;
   svg.appendChild(defs);
 
   const silGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
@@ -294,10 +358,11 @@ function render(sex){
   pulse.setAttribute('cx',300); pulse.setAttribute('cy',300); pulse.setAttribute('r',150);
   pulse.setAttribute('class','core-pulse');
   silGroup.appendChild(pulse);
-  const sil = document.createElementNS('http://www.w3.org/2000/svg','path');
-  sil.setAttribute('d', silhouettePath(sex));
-  sil.setAttribute('class','silhouette-fill');
-  silGroup.appendChild(sil);
+  const bodyG = document.createElementNS('http://www.w3.org/2000/svg','g');
+  bodyG.setAttribute('class','silhouette-fill');
+  bodyG.setAttribute('transform','translate(300,300) scale(0.78) translate(-300,-331.5)');
+  bodyG.innerHTML = silhouetteMarkup(sex);
+  silGroup.appendChild(bodyG);
   svg.appendChild(silGroup);
 
   const labelTitle = document.createElementNS('http://www.w3.org/2000/svg','text');
@@ -319,12 +384,13 @@ function render(sex){
 
     const path = document.createElementNS('http://www.w3.org/2000/svg','path');
     path.setAttribute('d', arcPath(R_OUT, R_IN, start, end));
-    path.setAttribute('fill', sysData.color);
-    path.setAttribute('fill-opacity', '0.30');
+    path.setAttribute('fill', `url(#grad${i})`);
     path.setAttribute('stroke', sysData.color);
     path.setAttribute('stroke-width', '1.2');
-    path.setAttribute('class','seg');
+    path.setAttribute('class','seg seg-enter');
+    path.style.animationDelay = `${i*45}ms`;
     path.dataset.idx = i;
+    path.dataset.mid = mid;
 
     path.addEventListener('mouseenter', () => { if(lockedIdx===null) highlight(i); });
     path.addEventListener('mouseleave', () => { if(lockedIdx===null) highlight(null); });
@@ -335,7 +401,7 @@ function render(sex){
     svg.appendChild(path);
 
     // label
-    const lp = polar(CX,CY,(R_OUT+18),mid);
+    const lp = polar(CX,CY,(R_OUT+26),mid);
     const text = document.createElementNS('http://www.w3.org/2000/svg','text');
     text.setAttribute('x', lp.x); text.setAttribute('y', lp.y);
     text.setAttribute('class','seg-label');
@@ -353,21 +419,62 @@ function render(sex){
     badge.textContent = sysData.organs.length;
     svg.appendChild(badge);
   });
+
+  buildLegend(systems);
+}
+
+function buildLegend(systems){
+  const legend = document.getElementById('legend');
+  legend.innerHTML = systems.map((s,i)=>`
+    <div class="legend-item" data-idx="${i}" style="color:${'inherit'}">
+      <span class="legend-dot" style="background:${s.color}; color:${s.color};"></span>
+      ${s.name}
+    </div>`).join('');
+  legend.querySelectorAll('.legend-item').forEach(item=>{
+    const i = +item.dataset.idx;
+    item.addEventListener('mouseenter', ()=>{ if(lockedIdx===null) highlight(i); });
+    item.addEventListener('mouseleave', ()=>{ if(lockedIdx===null) highlight(null); });
+    item.addEventListener('click', ()=>{
+      lockedIdx = (lockedIdx === i) ? null : i;
+      highlight(lockedIdx);
+    });
+  });
 }
 
 function highlight(idx){
   document.querySelectorAll('.seg').forEach(el=>{
     const i = +el.dataset.idx;
-    el.classList.toggle('active', i===idx);
+    const isActive = i===idx;
+    el.classList.toggle('active', isActive);
     el.classList.toggle('dim', idx!==null && i!==idx);
+    if(isActive){
+      const mid = +el.dataset.mid;
+      const rad = (mid-90) * Math.PI/180;
+      const dx = Math.cos(rad)*12, dy = Math.sin(rad)*12;
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(1.03)`;
+    } else {
+      el.style.transform = '';
+    }
   });
   document.querySelectorAll('.seg-label').forEach(el=>{
     const i = +el.dataset.idx;
     el.classList.toggle('active', i===idx);
     el.classList.toggle('dim', idx!==null && i!==idx);
   });
+  document.querySelectorAll('.legend-item').forEach(el=>{
+    const i = +el.dataset.idx;
+    el.classList.toggle('active-legend', i===idx);
+  });
   if(idx===null){
-    panelBody.innerHTML = `<p class="placeholder">Hover or tap a segment on the wheel to view its organs and structures. Each of the ten systems holds a different number of components — the badge on the ring shows the count.</p>`;
+    const total = DATA[currentSex].reduce((s,x)=>s+x.organs.length,0);
+    const most = DATA[currentSex].reduce((a,b)=> b.organs.length>a.organs.length ? b : a);
+    const fewest = DATA[currentSex].reduce((a,b)=> b.organs.length<a.organs.length ? b : a);
+    panelBody.innerHTML = `
+      <p class="placeholder">Hover or tap a segment on the wheel to view its organs and structures.</p>
+      <div class="stat-row"><span>Total components mapped</span><b>${total}</b></div>
+      <div class="stat-row"><span>Most detailed system</span><b>${most.name.replace(' System','')} · ${most.organs.length}</b></div>
+      <div class="stat-row"><span>Fewest components</span><b>${fewest.name.replace(' System','')} · ${fewest.organs.length}</b></div>
+    `;
     return;
   }
   const sysData = DATA[currentSex][idx];
