@@ -112,6 +112,13 @@
 
   .silhouette{ transition:filter .4s ease; }
   .silhouette-fill{ fill:rgba(180,225,255,0.05); stroke:rgba(120,210,255,0.55); stroke-width:1.4; }
+  .sil-male{ stroke:rgba(120,180,255,0.65); }
+  .sil-female{ stroke:rgba(255,150,210,0.6); }
+  .seam-line{ stroke:rgba(150,220,255,0.35); stroke-width:1; stroke-dasharray:3 4; }
+  .half-tag{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.1em;
+    fill:var(--text-lo); opacity:.6;
+  }
   .core-pulse{
     fill:none; stroke:var(--glow-cyan); stroke-width:1; opacity:.55;
     animation:pulse 3.2s ease-in-out infinite;
@@ -159,6 +166,13 @@
     font-family:var(--font-mono); font-size:10px; color:var(--glow-cyan);
     width:20px; flex-shrink:0;
   }
+  .organ-list li .label{ flex:1; }
+  .tag{
+    font-family:var(--font-mono); font-size:9px; letter-spacing:.05em;
+    padding:2px 6px; border-radius:999px; flex-shrink:0;
+  }
+  .tag-m{ background:rgba(90,160,255,0.16); color:#8fc4ff; border:1px solid rgba(90,160,255,0.35); }
+  .tag-f{ background:rgba(255,120,190,0.14); color:#ff9dcb; border:1px solid rgba(255,120,190,0.32); }
   .organ-list li:hover{
     background:rgba(79,227,255,0.11); border-color:rgba(79,227,255,0.3);
     transform:translateX(2px);
@@ -209,7 +223,8 @@
 </header>
 
 <div class="toggle-wrap">
-  <button class="toggle-btn active" data-sex="female">Female</button>
+  <button class="toggle-btn active" data-sex="fused">Fused</button>
+  <button class="toggle-btn" data-sex="female">Female</button>
   <button class="toggle-btn" data-sex="male">Male</button>
 </div>
 
@@ -261,8 +276,24 @@ const DATA = {
 const svg = document.getElementById('chart');
 const panelBody = document.getElementById('panelBody');
 const CX=300, CY=300, R_OUT=262, R_IN=168, GAP=1.6;
-let currentSex = 'female';
+let currentSex = 'fused';
 let lockedIdx = null;
+
+function buildFused(){
+  return DATA.female.map((fSys, i) => {
+    const mSys = DATA.male[i];
+    const fLower = fSys.organs.map(x=>x.toLowerCase());
+    const mLower = mSys.organs.map(x=>x.toLowerCase());
+    const merged = fSys.organs.map(o => ({
+      label: o, tag: mLower.includes(o.toLowerCase()) ? null : 'F'
+    }));
+    mSys.organs.forEach(o => {
+      if(!fLower.includes(o.toLowerCase())) merged.push({ label:o, tag:'M' });
+    });
+    return { name: fSys.name, color: fSys.color, organs: merged };
+  });
+}
+DATA.fused = buildFused();
 
 function polar(cx,cy,r,angleDeg){
   const a = (angleDeg-90) * Math.PI/180;
@@ -344,6 +375,8 @@ function render(sex){
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+    <clipPath id="clipLeft"><rect x="-40" y="-40" width="340" height="680"/></clipPath>
+    <clipPath id="clipRight"><rect x="300" y="-40" width="340" height="680"/></clipPath>
     ${systems.map((s,i)=>`
       <radialGradient id="grad${i}" cx="50%" cy="50%" r="75%">
         <stop offset="0%" stop-color="${s.color}" stop-opacity="0.55"/>
@@ -358,17 +391,56 @@ function render(sex){
   pulse.setAttribute('cx',300); pulse.setAttribute('cy',300); pulse.setAttribute('r',150);
   pulse.setAttribute('class','core-pulse');
   silGroup.appendChild(pulse);
-  const bodyG = document.createElementNS('http://www.w3.org/2000/svg','g');
-  bodyG.setAttribute('class','silhouette-fill');
-  bodyG.setAttribute('transform','translate(300,300) scale(0.78) translate(-300,-331.5)');
-  bodyG.innerHTML = silhouetteMarkup(sex);
-  silGroup.appendChild(bodyG);
+
+  if(sex === 'fused'){
+    const leftG = document.createElementNS('http://www.w3.org/2000/svg','g');
+    leftG.setAttribute('clip-path','url(#clipLeft)');
+    const leftBody = document.createElementNS('http://www.w3.org/2000/svg','g');
+    leftBody.setAttribute('class','silhouette-fill sil-male');
+    leftBody.setAttribute('transform','translate(300,300) scale(0.78) translate(-300,-331.5)');
+    leftBody.innerHTML = silhouetteMarkup('male');
+    leftG.appendChild(leftBody);
+    silGroup.appendChild(leftG);
+
+    const rightG = document.createElementNS('http://www.w3.org/2000/svg','g');
+    rightG.setAttribute('clip-path','url(#clipRight)');
+    const rightBody = document.createElementNS('http://www.w3.org/2000/svg','g');
+    rightBody.setAttribute('class','silhouette-fill sil-female');
+    rightBody.setAttribute('transform','translate(300,300) scale(0.78) translate(-300,-331.5)');
+    rightBody.innerHTML = silhouetteMarkup('female');
+    rightG.appendChild(rightBody);
+    silGroup.appendChild(rightG);
+
+    const seam = document.createElementNS('http://www.w3.org/2000/svg','line');
+    seam.setAttribute('x1',300); seam.setAttribute('y1',140);
+    seam.setAttribute('x2',300); seam.setAttribute('y2',460);
+    seam.setAttribute('class','seam-line');
+    silGroup.appendChild(seam);
+
+    const tagM = document.createElementNS('http://www.w3.org/2000/svg','text');
+    tagM.setAttribute('x',255); tagM.setAttribute('y',175);
+    tagM.setAttribute('class','half-tag'); tagM.setAttribute('text-anchor','end');
+    tagM.textContent = 'M';
+    silGroup.appendChild(tagM);
+    const tagF = document.createElementNS('http://www.w3.org/2000/svg','text');
+    tagF.setAttribute('x',345); tagF.setAttribute('y',175);
+    tagF.setAttribute('class','half-tag'); tagF.setAttribute('text-anchor','start');
+    tagF.textContent = 'F';
+    silGroup.appendChild(tagF);
+  } else {
+    const bodyG = document.createElementNS('http://www.w3.org/2000/svg','g');
+    bodyG.setAttribute('class','silhouette-fill');
+    bodyG.setAttribute('transform','translate(300,300) scale(0.78) translate(-300,-331.5)');
+    bodyG.innerHTML = silhouetteMarkup(sex);
+    silGroup.appendChild(bodyG);
+  }
   svg.appendChild(silGroup);
 
+  const titleMap = { fused:'Unified', female:'Female', male:'Male' };
   const labelTitle = document.createElementNS('http://www.w3.org/2000/svg','text');
   labelTitle.setAttribute('x',300); labelTitle.setAttribute('y',296);
   labelTitle.setAttribute('class','center-title');
-  labelTitle.textContent = sex === 'female' ? 'Female' : 'Male';
+  labelTitle.textContent = titleMap[sex];
   svg.appendChild(labelTitle);
 
   const labelSub = document.createElementNS('http://www.w3.org/2000/svg','text');
@@ -478,11 +550,16 @@ function highlight(idx){
     return;
   }
   const sysData = DATA[currentSex][idx];
+  const nameMap = { fused:'unified', female:'female', male:'male' };
   panelBody.innerHTML = `
     <h2>${sysData.name}</h2>
-    <div class="meta">${sysData.organs.length} components · ${currentSex}</div>
+    <div class="meta">${sysData.organs.length} components · ${nameMap[currentSex]}</div>
     <ul class="organ-list">
-      ${sysData.organs.map((o,j)=>`<li style="animation-delay:${j*35}ms"><span class="idx">${String(j+1).padStart(2,'0')}</span>${o}</li>`).join('')}
+      ${sysData.organs.map((o,j)=>{
+        const label = typeof o === 'string' ? o : o.label;
+        const tag = (typeof o !== 'string' && o.tag) ? `<span class="tag tag-${o.tag.toLowerCase()}">${o.tag}</span>` : '';
+        return `<li style="animation-delay:${j*35}ms"><span class="idx">${String(j+1).padStart(2,'0')}</span><span class="label">${label}</span>${tag}</li>`;
+      }).join('')}
     </ul>
   `;
 }
@@ -495,7 +572,7 @@ document.querySelectorAll('.toggle-btn').forEach(btn=>{
   });
 });
 
-render('female');
+render('fused');
 </script>
 </body>
 </html>
