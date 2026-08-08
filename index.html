@@ -74,7 +74,7 @@
   .viewer-hint{ position:absolute; top:14px; left:18px; font-size:11px; color:var(--text-lo); letter-spacing:.05em;}
   svg#figure{ width:100%; max-width:460px; height:auto; margin-top:6px; filter:drop-shadow(0 0 30px rgba(0,150,220,0.16)); }
 
-  .organ{ cursor:pointer; transition:filter .2s, transform .2s, opacity .25s; transform-origin:center; }
+  .organ{ cursor:pointer; transition:filter .2s, transform .2s, opacity .25s; transform-box:fill-box; transform-origin:center; }
   .organ:hover{ filter: drop-shadow(0 0 10px var(--glow)) brightness(1.4); transform:scale(1.18); }
   .organ.pulse{ animation:pulse 2.6s ease-in-out infinite; }
   .organ.dim{ opacity:0.06; filter:none !important; }
