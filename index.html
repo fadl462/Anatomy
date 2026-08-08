@@ -2,577 +2,416 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>Transparent Anatomy Viewer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Transparent Body System Chart</title>
 <style>
   :root{
-    --bg-0:#04070d;
-    --bg-1:#070c17;
-    --panel:rgba(10,20,35,0.55);
-    --panel-border:rgba(70,190,255,0.35);
-    --glow-cyan:#4fe3ff;
-    --glow-blue:#2f8dff;
+    --bg-0:#050a14;
+    --bg-1:#0a1526;
+    --panel:rgba(12,24,44,0.72);
+    --edge:rgba(0,207,255,0.28);
+    --glow:#00cfff;
+    --glow-soft:rgba(0,207,255,0.35);
     --text-hi:#eaf6ff;
-    --text-lo:#8fb2cc;
-    --font-display: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-    --font-mono: 'Consolas', 'SFMono-Regular', Menlo, monospace;
+    --text-lo:#8fa9c2;
+    --skin:rgba(150,190,220,0.10);
+    --skin-edge:rgba(150,210,255,0.35);
   }
   *{box-sizing:border-box;}
-  html,body{
-    margin:0; padding:0; min-height:100vh;
+  html,body{margin:0;height:100%;}
+  body{
     background:
-      radial-gradient(ellipse 900px 700px at 20% 10%, rgba(47,141,255,0.10), transparent 60%),
-      radial-gradient(ellipse 900px 700px at 85% 90%, rgba(79,227,255,0.08), transparent 60%),
-      var(--bg-0);
+      radial-gradient(ellipse at 20% 0%, rgba(0,120,180,0.18), transparent 55%),
+      radial-gradient(ellipse at 85% 90%, rgba(0,80,160,0.15), transparent 55%),
+      linear-gradient(180deg,var(--bg-0),var(--bg-1));
     color:var(--text-hi);
-    font-family:var(--font-display);
+    font-family: "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    min-height:100%;
     overflow-x:hidden;
   }
-  .stars{
-    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
-    background-image:
-      radial-gradient(1px 1px at 10% 20%, #cdeeff 0, transparent 100%),
-      radial-gradient(1px 1px at 80% 30%, #cdeeff 0, transparent 100%),
-      radial-gradient(1px 1px at 60% 80%, #cdeeff 0, transparent 100%),
-      radial-gradient(1px 1px at 30% 65%, #cdeeff 0, transparent 100%),
-      radial-gradient(1px 1px at 90% 75%, #cdeeff 0, transparent 100%),
-      radial-gradient(1px 1px at 45% 15%, #cdeeff 0, transparent 100%);
-    background-repeat:repeat; background-size:400px 400px;
-  }
+  .app{ max-width:1200px; margin:0 auto; padding:22px 20px 60px; }
 
-  header{
-    position:relative; z-index:2;
-    text-align:center; padding:40px 20px 10px;
-  }
-  .eyebrow{
-    font-family:var(--font-mono); letter-spacing:.35em; font-size:11px;
-    color:var(--glow-cyan); text-transform:uppercase; opacity:.8;
-  }
-  h1{
-    margin:10px 0 6px; font-weight:300; font-size:clamp(26px,4vw,42px);
-    letter-spacing:.02em;
-    background:linear-gradient(90deg,#fff,#bfe9ff 45%,#4fe3ff);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .sub{ color:var(--text-lo); font-size:14px; max-width:560px; margin:0 auto; line-height:1.5;}
+  header{ display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px; border-bottom:1px solid var(--edge); padding-bottom:14px;}
+  .brand{ display:flex; flex-direction:column; gap:4px;}
+  .brand .eyebrow{ font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--glow); font-weight:600;}
+  .brand h1{ margin:0; font-size:26px; font-weight:650; letter-spacing:.01em;}
+  .brand .sub{ color:var(--text-lo); font-size:13px; }
 
-  .toggle-wrap{
-    display:flex; justify-content:center; gap:10px; margin:26px 0 6px; position:relative; z-index:3;
-  }
-  .toggle-btn{
-    font-family:var(--font-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase;
-    background:rgba(15,30,50,0.55); border:1px solid rgba(79,227,255,0.25); color:var(--text-lo);
-    padding:10px 22px; border-radius:999px; cursor:pointer; transition:all .25s ease;
-    backdrop-filter:blur(6px);
-  }
-  .toggle-btn.active{
-    color:#031018; background:linear-gradient(120deg,#4fe3ff,#2f8dff);
-    border-color:transparent;
-    box-shadow:0 0 18px rgba(79,227,255,.55), 0 0 40px rgba(47,141,255,.25);
-  }
-  .toggle-btn:hover:not(.active){ color:var(--text-hi); border-color:rgba(79,227,255,.6); }
+  .gender-toggle{ display:flex; background:var(--panel); border:1px solid var(--edge); border-radius:999px; padding:4px; gap:4px;}
+  .gender-toggle button{ border:none; background:transparent; color:var(--text-lo); padding:8px 18px; border-radius:999px; font-size:13px; cursor:pointer; font-weight:600; letter-spacing:.03em;}
+  .gender-toggle button.active{ background:linear-gradient(135deg,#0091c9,#00cfff); color:#04121e; box-shadow:0 0 18px var(--glow-soft);}
 
-  .stage{
-    position:relative; z-index:2;
-    display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:center;
-    gap:26px; max-width:1180px; margin:10px auto 30px; padding:0 20px;
-  }
+  .layout{ display:grid; grid-template-columns: 230px 1fr 300px; gap:18px; margin-top:20px; align-items:start;}
+  @media (max-width: 980px){ .layout{ grid-template-columns:1fr; } }
 
-  .chart-wrap{
-    position:relative; width:min(600px,92vw); aspect-ratio:1/1;
-    filter:drop-shadow(0 0 40px rgba(47,141,255,0.18));
-  }
-  svg{ width:100%; height:100%; overflow:visible; }
+  .card{ background:var(--panel); border:1px solid var(--edge); border-radius:16px; padding:16px; backdrop-filter: blur(6px); }
+  .card h2{ font-size:11px; text-transform:uppercase; letter-spacing:.16em; color:var(--text-lo); margin:0 0 12px; }
 
-  .seg{
-    cursor:pointer; transition:opacity .35s ease, filter .35s ease, transform .45s cubic-bezier(.2,.8,.2,1);
-    transform-box:fill-box; transform-origin:center;
-  }
-  .seg.dim{ opacity:.22; }
-  .seg.active{ filter:drop-shadow(0 0 10px var(--glow-cyan)) drop-shadow(0 0 26px var(--glow-blue)); }
-  .seg:hover{ filter:drop-shadow(0 0 8px var(--glow-cyan)); }
+  /* search */
+  .search-box{ position:relative; margin-bottom:16px;}
+  .search-box input{ width:100%; background:rgba(0,0,0,0.25); border:1px solid var(--edge); color:var(--text-hi); border-radius:10px; padding:10px 12px; font-size:13px; outline:none;}
+  .search-box input:focus{ border-color:var(--glow); box-shadow:0 0 0 3px rgba(0,207,255,0.12);}
+  .search-results{ position:absolute; top:calc(100% + 6px); left:0; right:0; background:#08182b; border:1px solid var(--edge); border-radius:10px; overflow:hidden; z-index:20; display:none; }
+  .search-results div{ padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .search-results div:hover{ background:rgba(0,207,255,0.12); }
 
-  @keyframes segIn{
-    from{ opacity:0; transform:scale(.85); }
-    to{ opacity:1; transform:scale(1); }
-  }
-  .seg-enter{ animation:segIn .6s cubic-bezier(.2,.8,.2,1) backwards; }
+  /* system filter chips */
+  .sys-list{ display:flex; flex-direction:column; gap:6px; }
+  .sys-chip{ display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:10px; border:1px solid transparent; cursor:pointer; font-size:12.5px; color:var(--text-lo); transition:.15s; user-select:none;}
+  .sys-chip:hover{ background:rgba(255,255,255,0.04); }
+  .sys-chip.active{ background:rgba(0,207,255,0.08); border-color:var(--edge); color:var(--text-hi); }
+  .sys-dot{ width:10px; height:10px; border-radius:50%; flex:none; box-shadow:0 0 8px currentColor;}
+  .sys-actions{ display:flex; gap:8px; margin-top:12px;}
+  .sys-actions button{ flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--edge); color:var(--text-lo); border-radius:8px; padding:7px 0; font-size:11.5px; cursor:pointer; letter-spacing:.04em;}
+  .sys-actions button:hover{ color:var(--text-hi); border-color:var(--glow); }
 
-  .seg-label{
-    font-family:var(--font-mono); font-size:10.5px; fill:var(--text-hi);
-    letter-spacing:.04em; pointer-events:none; text-transform:uppercase;
-    transition:opacity .3s ease, fill .3s ease;
-  }
-  .seg-label.dim{ opacity:.35; }
-  .seg-label.active{ fill:var(--glow-cyan); }
+  .opacity-row{ margin-top:16px; }
+  .opacity-row label{ font-size:11px; color:var(--text-lo); display:block; margin-bottom:6px;}
+  .opacity-row input{ width:100%; accent-color:var(--glow); }
 
-  .count-badge{
-    font-family:var(--font-mono); font-size:9px; fill:var(--text-lo); pointer-events:none;
-  }
+  /* viewer */
+  .viewer{ position:relative; display:flex; flex-direction:column; align-items:center; padding:10px 10px 4px; min-height:640px; justify-content:center;}
+  .viewer-hint{ position:absolute; top:14px; left:18px; font-size:11px; color:var(--text-lo); letter-spacing:.05em;}
+  svg#figure{ width:100%; max-width:340px; height:auto; filter:drop-shadow(0 0 24px rgba(0,150,220,0.18)); }
 
-  .silhouette{ transition:filter .4s ease; }
-  .silhouette-fill{ fill:rgba(180,225,255,0.05); stroke:rgba(120,210,255,0.55); stroke-width:1.4; }
-  .sil-male{ stroke:rgba(120,180,255,0.65); }
-  .sil-female{ stroke:rgba(255,150,210,0.6); }
-  .seam-line{ stroke:rgba(150,220,255,0.35); stroke-width:1; stroke-dasharray:3 4; }
-  .half-tag{
-    font-family:var(--font-mono); font-size:10px; letter-spacing:.1em;
-    fill:var(--text-lo); opacity:.6;
-  }
-  .core-pulse{
-    fill:none; stroke:var(--glow-cyan); stroke-width:1; opacity:.55;
-    animation:pulse 3.2s ease-in-out infinite;
-    transform-origin:300px 300px;
-  }
+  .organ{ cursor:pointer; transition:filter .2s, transform .2s, opacity .25s; transform-origin:center; }
+  .organ:hover{ filter: drop-shadow(0 0 10px var(--glow)) brightness(1.4); transform:scale(1.14); }
+  .organ.pulse{ animation:pulse 1.8s ease-in-out infinite; }
+  .organ.dim{ opacity:0.08; filter:none !important; }
+  .organ.selected{ filter: drop-shadow(0 0 16px #fff) drop-shadow(0 0 26px var(--glow)); }
   @keyframes pulse{
-    0%,100%{ transform:scale(1); opacity:.5; }
-    50%{ transform:scale(1.06); opacity:.15; }
+    0%,100%{ filter: drop-shadow(0 0 6px currentColor); }
+    50%{ filter: drop-shadow(0 0 16px currentColor) brightness(1.3); }
   }
 
-  .center-label{
-    font-family:var(--font-mono); text-anchor:middle; fill:var(--text-lo);
-    font-size:10px; letter-spacing:.15em;
-  }
-  .center-title{
-    font-family:var(--font-display); text-anchor:middle; fill:var(--text-hi);
-    font-size:15px; font-weight:300;
-  }
+  .tooltip{ position:absolute; pointer-events:none; background:#04121e; border:1px solid var(--glow); color:var(--text-hi); font-size:12px; padding:5px 9px; border-radius:7px; transform:translate(-50%,-130%); white-space:nowrap; opacity:0; transition:opacity .12s; z-index:30;}
+  .tooltip.show{ opacity:1; }
 
-  .panel{
-    width:340px; max-width:92vw;
-    background:var(--panel); border:1px solid var(--panel-border);
-    border-radius:18px; padding:26px 24px; backdrop-filter:blur(14px);
-    box-shadow:0 0 40px rgba(47,141,255,.10), inset 0 0 40px rgba(79,227,255,.03);
-    align-self:flex-start;
-  }
-  .panel-eyebrow{
-    font-family:var(--font-mono); font-size:10px; letter-spacing:.25em; color:var(--glow-cyan);
-    text-transform:uppercase; opacity:.85;
-  }
-  .panel h2{
-    margin:8px 0 2px; font-weight:300; font-size:22px; color:var(--text-hi);
-  }
-  .panel .meta{ color:var(--text-lo); font-size:12px; font-family:var(--font-mono); margin-bottom:18px;}
-  .organ-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
-  .organ-list li{
-    display:flex; align-items:center; gap:10px;
-    padding:9px 12px; border-radius:10px;
-    background:rgba(79,227,255,0.05); border:1px solid rgba(79,227,255,0.12);
-    font-size:13.5px; color:var(--text-hi);
-    opacity:0; transform:translateX(-8px);
-    animation:slidein .4s ease forwards;
-  }
-  .organ-list li .idx{
-    font-family:var(--font-mono); font-size:10px; color:var(--glow-cyan);
-    width:20px; flex-shrink:0;
-  }
-  .organ-list li .label{ flex:1; }
-  .tag{
-    font-family:var(--font-mono); font-size:9px; letter-spacing:.05em;
-    padding:2px 6px; border-radius:999px; flex-shrink:0;
-  }
-  .tag-m{ background:rgba(90,160,255,0.16); color:#8fc4ff; border:1px solid rgba(90,160,255,0.35); }
-  .tag-f{ background:rgba(255,120,190,0.14); color:#ff9dcb; border:1px solid rgba(255,120,190,0.32); }
-  .organ-list li:hover{
-    background:rgba(79,227,255,0.11); border-color:rgba(79,227,255,0.3);
-    transform:translateX(2px);
-  }
-  @keyframes slidein{ to{ opacity:1; transform:translateX(0);} }
-  .placeholder{ color:var(--text-lo); font-size:13.5px; line-height:1.6; padding-top:8px; margin-bottom:18px;}
-  .stat-row{
-    display:flex; justify-content:space-between; align-items:baseline;
-    padding:10px 0; border-top:1px solid rgba(79,227,255,0.1);
-    font-size:12.5px; color:var(--text-lo);
-  }
-  .stat-row b{ color:var(--text-hi); font-weight:500; font-size:13px; }
+  /* info panel */
+  .info-card{ min-height:200px; }
+  .info-empty{ color:var(--text-lo); font-size:13px; line-height:1.6; }
+  .info-name{ font-size:19px; font-weight:650; margin:0; }
+  .info-latin{ font-size:12.5px; color:var(--glow); font-style:italic; margin:2px 0 12px; }
+  .info-tag{ display:inline-block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:999px; border:1px solid var(--edge); color:var(--text-lo); margin-bottom:12px;}
+  .info-section{ margin-bottom:10px; }
+  .info-section h3{ margin:0 0 3px; font-size:10.5px; text-transform:uppercase; letter-spacing:.1em; color:var(--text-lo); }
+  .info-section p{ margin:0; font-size:13px; line-height:1.55; color:var(--text-hi); }
+  .info-close{ float:right; background:none; border:none; color:var(--text-lo); font-size:16px; cursor:pointer; }
+  .info-close:hover{ color:var(--glow); }
 
-  .legend{
-    display:flex; flex-wrap:wrap; gap:8px 14px; justify-content:center;
-    max-width:760px; margin:6px auto 0; padding:0 20px; position:relative; z-index:2;
-  }
-  .legend-item{
-    display:flex; align-items:center; gap:6px; font-family:var(--font-mono);
-    font-size:10.5px; color:var(--text-lo); cursor:pointer; transition:color .2s ease;
-    padding:4px 2px;
-  }
-  .legend-item:hover, .legend-item.active-legend{ color:var(--text-hi); }
-  .legend-dot{
-    width:8px; height:8px; border-radius:50%; flex-shrink:0;
-    box-shadow:0 0 6px currentColor;
-  }
-
-  footer{
-    position:relative; z-index:2; text-align:center; color:var(--text-lo);
-    font-family:var(--font-mono); font-size:11px; letter-spacing:.08em;
-    padding:0 20px 50px; opacity:.6;
-  }
-
-  @media (max-width:720px){
-    .stage{ flex-direction:column; }
-    .panel{ width:100%; min-height:auto; }
-  }
+  footer{ margin-top:26px; text-align:center; color:var(--text-lo); font-size:11.5px; line-height:1.7;}
 </style>
 </head>
 <body>
-<div class="stars"></div>
+<div class="app">
 
-<header>
-  <div class="eyebrow">Anatomical Reference · Interactive</div>
-  <h1>Transparent Body System Chart</h1>
-  <p class="sub">Ten physiological systems, rendered as a translucent radial map. Select a segment to reveal its organs.</p>
-</header>
-
-<div class="toggle-wrap">
-  <button class="toggle-btn active" data-sex="fused">Fused</button>
-  <button class="toggle-btn" data-sex="female">Female</button>
-  <button class="toggle-btn" data-sex="male">Male</button>
-</div>
-
-<div class="stage">
-  <div class="chart-wrap">
-    <svg id="chart" viewBox="-40 -40 680 680"></svg>
-  </div>
-
-  <div class="panel" id="panel">
-    <div class="panel-eyebrow">System detail</div>
-    <div id="panelBody">
-      <p class="placeholder">Hover or tap a segment on the wheel to view its organs and structures. Each of the ten systems holds a different number of components — the badge on the ring shows the count.</p>
+  <header>
+    <div class="brand">
+      <span class="eyebrow">Educational Prototype</span>
+      <h1>Transparent Anatomy Viewer</h1>
+      <span class="sub">Click an organ to inspect it · filter by system · search by name</span>
     </div>
+    <div class="gender-toggle">
+      <button id="btn-male" class="active">Male</button>
+      <button id="btn-female">Female</button>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- LEFT: systems -->
+    <div class="card">
+      <h2>Body Systems</h2>
+      <div class="sys-list" id="sysList"></div>
+      <div class="sys-actions">
+        <button id="showAll">Show all</button>
+        <button id="clearSel">Clear</button>
+      </div>
+      <div class="opacity-row">
+        <label>Body transparency</label>
+        <input type="range" id="opacitySlider" min="0" max="100" value="60">
+      </div>
+    </div>
+
+    <!-- CENTER: viewer -->
+    <div class="card viewer">
+      <div class="viewer-hint">Hover to preview · click to lock in details</div>
+      <div class="search-box" style="width:100%;max-width:340px;">
+        <input type="text" id="searchInput" placeholder="Search an organ (e.g. liver, heart)…" autocomplete="off">
+        <div class="search-results" id="searchResults"></div>
+      </div>
+      <svg id="figure" viewBox="0 0 300 660" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <!-- RIGHT: info panel -->
+    <div class="card info-card">
+      <h2>Organ Detail</h2>
+      <div id="infoBody">
+        <p class="info-empty">Select an organ on the figure to see its name, function, associated system, common disorders and a quick fact.</p>
+      </div>
+    </div>
+
   </div>
+
+  <footer>
+    Schematic educational visualization — simplified positions and shapes, not a diagnostic or clinically-precise 3D model.<br>
+    Built as a starting prototype: extend <code>ORGANS</code> and the SVG body group to add more structures, layers, or a true 3D renderer.
+  </footer>
 </div>
-
-<div class="legend" id="legend"></div>
-
-<footer>Click a segment to lock it · click again to release · switch chart above</footer>
 
 <script>
-const DATA = {
-  female: [
-    { name:"Lymphatic System",     color:"#4fe3ff", organs:["Adenoids","Spleen","Lymph Nodes","Tonsils","Bone Marrow","Lymphatic Vessels","Thymus Gland","Diaphragm","Transverse Colon"] },
-    { name:"Digestive System",     color:"#38c6ff", organs:["Nose","Mouth","Teeth","Tongue","Taste Buds","Pharynx","Larynx","Trachea","Esophagus","Stomach","Mesentery","Small Intestine","Large Intestine","Liver","Gall Bladder","Pancreas","Cecum","Anus"] },
-    { name:"Urinary System",       color:"#4fa3ff", organs:["Kidneys","Ureters","Urinary Bladder","Urethra","Sphincter","Adrenal Glands","Nerves of Bladder","Brain (control)"] },
-    { name:"Respiratory System",   color:"#6a8fff", organs:["Nose","Mouth","Sinuses","Pharynx","Larynx","Vocal Cords","Trachea","Bronchi","Bronchioles","Lungs","Diaphragm","Olfactory Nerve","Blood Vessels"] },
-    { name:"Musculoskeletal System", color:"#8a7bff", organs:["Bones","Joints","Ligaments","Tendons","Skeletal Muscles","Bone Marrow","Interstitium","Diaphragm"] },
-    { name:"Circulatory System",   color:"#b06bff", organs:["Heart","Arteries","Veins","Capillaries","Blood","Blood Vessels","Lungs","Muscles","Lymphatic System","Brain"] },
-    { name:"Endocrine System",     color:"#d75dff", organs:["Pituitary Gland","Pineal Gland","Hypothalamus","Thyroid Gland","Parathyroid Glands","Thymus Gland","Adrenal Glands","Pancreas","Ovaries"] },
-    { name:"Nervous System",       color:"#ff5ccb", organs:["Brain","Spinal Cord","Cerebellum","Hypothalamus","Pituitary Gland","Pineal Gland","Nerves"] },
-    { name:"Reproductive System",  color:"#ff5c86", organs:["Ovaries","Fallopian Tubes","Uterus","Cervix","Vagina","Vulva","Clitoris","Mons Pubis"] },
-    { name:"Integumentary System", color:"#ff7a4d", organs:["Skin","Hair Follicles","Nails","Sebaceous Glands","Subcutaneous Tissue","Adipose Tissue"] }
-  ],
-  male: [
-    { name:"Lymphatic System",     color:"#4fe3ff", organs:["Adenoids","Spleen","Lymph Nodes","Tonsils","Bone Marrow","Lymphatic Vessels","Thymus Gland"] },
-    { name:"Digestive System",     color:"#38c6ff", organs:["Nose","Mouth","Teeth","Tongue","Taste Buds","Pharynx","Larynx","Trachea","Esophagus","Stomach","Mesentery","Small Intestine","Large Intestine","Liver","Gall Bladder","Pancreas","Anus"] },
-    { name:"Urinary System",       color:"#4fa3ff", organs:["Kidneys","Ureters","Urinary Bladder","Urethra","Prostate","Nerves of Bladder","Brain (control)"] },
-    { name:"Respiratory System",   color:"#6a8fff", organs:["Nose","Mouth","Sinuses","Pharynx","Larynx","Vocal Cords","Trachea","Bronchi","Bronchioles","Lungs","Diaphragm","Olfactory Nerve","Blood Vessels"] },
-    { name:"Musculoskeletal System", color:"#8a7bff", organs:["Bones","Joints","Ligaments","Tendons","Skeletal Muscles","Bone Marrow","Interstitium","Diaphragm"] },
-    { name:"Circulatory System",   color:"#b06bff", organs:["Heart","Arteries","Veins","Capillaries","Blood","Blood Vessels","Lungs","Muscles","Lymphatic System","Brain"] },
-    { name:"Endocrine System",     color:"#d75dff", organs:["Pituitary Gland","Pineal Gland","Hypothalamus","Thyroid Gland","Parathyroid Glands","Thymus Gland","Adrenal Glands","Pancreas","Testes"] },
-    { name:"Nervous System",       color:"#ff5ccb", organs:["Brain","Spinal Cord","Cerebellum","Hypothalamus","Pituitary Gland","Pineal Gland","Nerves"] },
-    { name:"Reproductive System",  color:"#ff5c86", organs:["Testes","Epididymis","Vas Deferens","Seminal Vesicles","Prostate","Penis","Scrotum"] },
-    { name:"Integumentary System", color:"#ff7a4d", organs:["Skin","Hair Follicles","Nails","Sebaceous Glands","Subcutaneous Tissue","Adipose Tissue"] }
-  ]
+/* ---------------- SYSTEM DEFINITIONS ---------------- */
+const SYSTEMS = {
+  nervous:     { label:"Nervous",      color:"#ffd94d" },
+  skeletal:    { label:"Skeletal",     color:"#e9edf2" },
+  muscular:    { label:"Muscular",     color:"#e85b5b" },
+  circulatory: { label:"Circulatory",  color:"#ff4d4d" },
+  respiratory: { label:"Respiratory",  color:"#4fc3f7" },
+  digestive:   { label:"Digestive",    color:"#ffa726" },
+  endocrine:   { label:"Endocrine",    color:"#c15be8" },
+  lymphatic:   { label:"Lymphatic",    color:"#66d18c" },
+  urinary:     { label:"Urinary",      color:"#26c6da" },
+  reproductive:{ label:"Reproductive", color:"#f06ea9" },
 };
 
-const svg = document.getElementById('chart');
-const panelBody = document.getElementById('panelBody');
-const CX=300, CY=300, R_OUT=262, R_IN=168, GAP=1.6;
-let currentSex = 'fused';
-let lockedIdx = null;
+/* ---------------- ORGAN DATA ---------------- */
+/* cx, cy in the 300x660 viewBox. gender: "m" | "f" | null (both) */
+const ORGANS = [
+  { id:"brain", name:"Brain", latin:"Cerebrum", system:"nervous", cx:150, cy:52, r:16,
+    fn:"Coordinates thought, movement, sensation and regulates the rest of the nervous system.",
+    disorders:"Migraine, stroke, epilepsy.", fact:"Uses roughly 20% of the body's energy at rest despite being about 2% of body weight." },
+  { id:"spinalcord", name:"Spinal Cord", latin:"Medulla spinalis", system:"nervous", cx:150, cy:150, r:7,
+    fn:"Relays signals between the brain and the rest of the body, and coordinates reflexes.",
+    disorders:"Spinal cord injury, herniated disc compression.", fact:"Reflex actions, like pulling a hand off something hot, can happen before the signal even reaches the brain." },
+  { id:"skull", name:"Skull", latin:"Cranium", system:"skeletal", cx:150, cy:35, r:8,
+    fn:"Encases and protects the brain, and anchors the facial structures.",
+    disorders:"Skull fracture, craniosynostosis.", fact:"An adult skull is made of 22 individual bones fused together." },
+  { id:"ribcage", name:"Rib Cage", latin:"Thorax", system:"skeletal", cx:150, cy:190, r:9,
+    fn:"Protects the heart and lungs and assists breathing mechanics.",
+    disorders:"Rib fracture, costochondritis.", fact:"Most people have 12 pairs of ribs, but roughly 1 in 200 people have an extra pair." },
+  { id:"diaphragm", name:"Diaphragm", latin:"Diaphragma", system:"muscular", cx:150, cy:258, r:8,
+    fn:"The primary muscle of breathing; contracts to draw air into the lungs.",
+    disorders:"Diaphragmatic hernia, hiccups (spasms).", fact:"A hiccup is an involuntary diaphragm spasm — its exact purpose is still debated." },
+  { id:"lungL", name:"Left Lung", latin:"Pulmo sinister", system:"respiratory", cx:118, cy:210, r:13,
+    fn:"Exchanges oxygen and carbon dioxide between inhaled air and the bloodstream.",
+    disorders:"Asthma, pneumonia, COPD.", fact:"The left lung is smaller than the right to make room for the heart." },
+  { id:"lungR", name:"Right Lung", latin:"Pulmo dexter", system:"respiratory", cx:182, cy:210, r:14,
+    fn:"Exchanges oxygen and carbon dioxide between inhaled air and the bloodstream.",
+    disorders:"Asthma, pneumonia, COPD.", fact:"The right lung has three lobes; the left has only two." },
+  { id:"trachea", name:"Trachea", latin:"Trachea", system:"respiratory", cx:150, cy:170, r:6,
+    fn:"The windpipe — carries air between the throat and the lungs.",
+    disorders:"Tracheitis, tracheal stenosis.", fact:"Its wall is reinforced with C-shaped rings of cartilage so it never collapses." },
+  { id:"heart", name:"Heart", latin:"Cor", system:"circulatory", cx:150, cy:225, r:15,
+    fn:"Pumps blood through the circulatory system, delivering oxygen and nutrients.",
+    disorders:"Coronary artery disease, arrhythmia, heart failure.", fact:"An average adult heart beats about 100,000 times a day." },
+  { id:"liver", name:"Liver", latin:"Hepar", system:"digestive", cx:190, cy:270, r:14,
+    fn:"Filters the blood, produces bile for digestion, and metabolizes nutrients and drugs.",
+    disorders:"Hepatitis, cirrhosis, fatty liver disease.", fact:"It's the only internal organ that can regenerate a significant part of itself." },
+  { id:"stomach", name:"Stomach", latin:"Ventriculus", system:"digestive", cx:115, cy:262, r:12,
+    fn:"Uses acid and enzymes to break down food before it moves to the intestines.",
+    disorders:"Gastritis, peptic ulcers, GERD.", fact:"Its lining replaces itself roughly every few days to keep up with its own acid." },
+  { id:"pancreas", name:"Pancreas", latin:"Pancreas", system:"endocrine", cx:150, cy:283, r:8,
+    fn:"Produces digestive enzymes and the hormones insulin and glucagon that regulate blood sugar.",
+    disorders:"Pancreatitis, diabetes mellitus.", fact:"It does double duty — most of it is a digestive gland, but small clusters of cells act as an endocrine gland." },
+  { id:"spleen", name:"Spleen", latin:"Lien", system:"lymphatic", cx:196, cy:245, r:9,
+    fn:"Filters blood, recycles old red blood cells, and supports immune responses.",
+    disorders:"Splenomegaly, splenic rupture.", fact:"You can live without it — other organs largely take over its functions if it's removed." },
+  { id:"smallint", name:"Small Intestine", latin:"Intestinum tenue", system:"digestive", cx:150, cy:320, r:13,
+    fn:"Absorbs most nutrients and water from digested food.",
+    disorders:"Celiac disease, Crohn's disease.", fact:"Uncoiled, it stretches roughly 6–7 meters (20+ feet) in an adult." },
+  { id:"largeint", name:"Large Intestine", latin:"Intestinum crassum", system:"digestive", cx:150, cy:355, r:14,
+    fn:"Absorbs remaining water and electrolytes and forms solid waste.",
+    disorders:"Diverticulitis, colorectal conditions.", fact:"It hosts trillions of gut bacteria that help digest fiber and produce certain vitamins." },
+  { id:"kidneyL", name:"Left Kidney", latin:"Ren sinister", system:"urinary", cx:118, cy:305, r:9,
+    fn:"Filters waste and excess fluid from the blood to form urine.",
+    disorders:"Kidney stones, chronic kidney disease.", fact:"Together, the kidneys filter about 180 liters of blood plasma every day." },
+  { id:"kidneyR", name:"Right Kidney", latin:"Ren dexter", system:"urinary", cx:182, cy:310, r:9,
+    fn:"Filters waste and excess fluid from the blood to form urine.",
+    disorders:"Kidney stones, chronic kidney disease.", fact:"The right kidney usually sits slightly lower than the left to make room for the liver." },
+  { id:"bladder", name:"Bladder", latin:"Vesica urinaria", system:"urinary", cx:150, cy:392, r:10,
+    fn:"Stores urine until it's released from the body.",
+    disorders:"Urinary tract infection, overactive bladder.", fact:"A healthy adult bladder can comfortably hold roughly 400–600 ml." },
+  { id:"thyroid", name:"Thyroid", latin:"Glandula thyroidea", system:"endocrine", cx:150, cy:130, r:6,
+    fn:"Produces hormones that regulate metabolism, energy use and growth.",
+    disorders:"Hypothyroidism, hyperthyroidism, goiter.", fact:"It's shaped like a butterfly and sits just below the voice box." },
+  { id:"repro_m", name:"Reproductive System", latin:"Systema genitale masculinum", system:"reproductive", cx:150, cy:430, r:10, gender:"m",
+    fn:"Produces sperm and reproductive hormones (primarily testosterone).",
+    disorders:"BPH, testicular conditions.", fact:"Hormone output from this system also influences bone density and muscle mass." },
+  { id:"repro_f", name:"Reproductive System", latin:"Systema genitale femininum", system:"reproductive", cx:150, cy:425, r:10, gender:"f",
+    fn:"Produces eggs and reproductive hormones (estrogen and progesterone), and supports pregnancy.",
+    disorders:"Endometriosis, PCOS.", fact:"The uterus can expand to roughly 500 times its normal size during pregnancy." },
+];
 
-function buildFused(){
-  return DATA.female.map((fSys, i) => {
-    const mSys = DATA.male[i];
-    const fLower = fSys.organs.map(x=>x.toLowerCase());
-    const mLower = mSys.organs.map(x=>x.toLowerCase());
-    const merged = fSys.organs.map(o => ({
-      label: o, tag: mLower.includes(o.toLowerCase()) ? null : 'F'
-    }));
-    mSys.organs.forEach(o => {
-      if(!fLower.includes(o.toLowerCase())) merged.push({ label:o, tag:'M' });
-    });
-    return { name: fSys.name, color: fSys.color, organs: merged };
+/* ---------------- STATE ---------------- */
+let gender = "m";
+let activeSystems = new Set(Object.keys(SYSTEMS)); // all active by default
+let selectedId = null;
+
+/* ---------------- BUILD SIDEBAR ---------------- */
+const sysListEl = document.getElementById("sysList");
+Object.entries(SYSTEMS).forEach(([key,sys])=>{
+  const chip = document.createElement("div");
+  chip.className = "sys-chip active";
+  chip.dataset.sys = key;
+  chip.innerHTML = `<span class="sys-dot" style="background:${sys.color};color:${sys.color}"></span>${sys.label}`;
+  chip.addEventListener("click", ()=>{
+    if(activeSystems.has(key)){ activeSystems.delete(key); chip.classList.remove("active"); }
+    else { activeSystems.add(key); chip.classList.add("active"); }
+    render();
   });
-}
-DATA.fused = buildFused();
-
-function polar(cx,cy,r,angleDeg){
-  const a = (angleDeg-90) * Math.PI/180;
-  return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) };
-}
-function arcPath(rOuter, rInner, startAngle, endAngle){
-  const p1 = polar(CX,CY,rOuter,startAngle);
-  const p2 = polar(CX,CY,rOuter,endAngle);
-  const p3 = polar(CX,CY,rInner,endAngle);
-  const p4 = polar(CX,CY,rInner,startAngle);
-  const large = (endAngle-startAngle) > 180 ? 1 : 0;
-  return `M ${p1.x} ${p1.y}
-          A ${rOuter} ${rOuter} 0 ${large} 1 ${p2.x} ${p2.y}
-          L ${p3.x} ${p3.y}
-          A ${rInner} ${rInner} 0 ${large} 0 ${p4.x} ${p4.y} Z`;
-}
-
-function silhouetteMarkup(sex){
-  if(sex === 'female'){
-    return `
-    <circle cx="300" cy="166" r="25"/>
-    <path d="M289,188 L289,202 Q300,209 311,202 L311,188 Z"/>
-    <path d="M256,212 C256,206 272,202 300,202 C328,202 344,206 344,212
-      L349,246 C351,258 344,268 332,272 C339,280 342,290 340,300
-      C356,306 366,318 365,332 L362,344 C361,350 356,354 350,352
-      C338,348 322,345 300,345 C278,345 262,348 250,352
-      C244,354 239,350 238,344 L235,332 C234,318 244,306 260,300
-      C258,290 261,280 268,272 C256,268 249,258 251,246 Z"/>
-    <path d="M252,214 C238,220 226,234 222,252 L214,316
-      C213,324 217,330 224,331 C231,332 236,327 237,319
-      L245,260 C247,246 251,234 259,224 Z"/>
-    <path d="M348,214 C362,220 374,234 378,252 L386,316
-      C387,324 383,330 376,331 C369,332 364,327 363,319
-      L355,260 C353,246 349,234 341,224 Z"/>
-    <path d="M262,350 C258,350 255,354 255,360 L248,508
-      C248,516 252,522 260,522 L271,522 C278,522 282,516 282,509
-      L286,366 C286,358 282,351 274,350 Z"/>
-    <path d="M338,350 C342,350 345,354 345,360 L352,508
-      C352,516 348,522 340,522 L329,522 C322,522 318,516 318,509
-      L314,366 C314,358 318,351 326,350 Z"/>`;
-  }
-  return `
-    <circle cx="300" cy="164" r="27"/>
-    <path d="M286,188 L286,204 Q300,212 314,204 L314,188 Z"/>
-    <path d="M246,214 C246,207 268,202 300,202 C332,202 354,207 354,214
-      L360,254 C362,266 354,276 340,280 C346,290 348,302 344,314
-      C356,320 364,330 364,342 L361,352 C360,358 355,361 349,359
-      C334,354 316,352 300,352 C284,352 266,354 251,359
-      C245,361 240,358 239,352 L236,342 C236,330 244,320 256,314
-      C252,302 254,290 260,280 C246,276 238,266 240,254 Z"/>
-    <path d="M244,216 C228,222 214,238 209,258 L200,326
-      C199,335 204,341 212,342 C220,343 226,337 227,329
-      L236,266 C238,250 243,236 252,225 Z"/>
-    <path d="M356,216 C372,222 386,238 391,258 L400,326
-      C401,335 396,341 388,342 C380,343 374,337 373,329
-      L364,266 C362,250 357,236 348,225 Z"/>
-    <path d="M266,357 C261,357 258,361 258,368 L252,510
-      C252,518 257,524 265,524 L277,524 C284,524 288,518 288,511
-      L290,373 C290,365 286,358 278,357 Z"/>
-    <path d="M334,357 C339,357 342,361 342,368 L348,510
-      C348,518 343,524 335,524 L323,524 C316,524 312,518 312,511
-      L310,373 C310,365 314,358 322,357 Z"/>`;
-}
-
-function render(sex){
-  currentSex = sex;
-  lockedIdx = null;
-  svg.innerHTML = '';
-  const systems = DATA[sex];
-  const n = systems.length;
-  const sweep = 360/n;
-
-  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
-  defs.innerHTML = `
-    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="4.2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <clipPath id="clipLeft"><rect x="-40" y="-40" width="340" height="680"/></clipPath>
-    <clipPath id="clipRight"><rect x="300" y="-40" width="340" height="680"/></clipPath>
-    ${systems.map((s,i)=>`
-      <radialGradient id="grad${i}" cx="50%" cy="50%" r="75%">
-        <stop offset="0%" stop-color="${s.color}" stop-opacity="0.55"/>
-        <stop offset="100%" stop-color="${s.color}" stop-opacity="0.16"/>
-      </radialGradient>`).join('')}
-  `;
-  svg.appendChild(defs);
-
-  const silGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
-  silGroup.setAttribute('class','silhouette');
-  const pulse = document.createElementNS('http://www.w3.org/2000/svg','circle');
-  pulse.setAttribute('cx',300); pulse.setAttribute('cy',300); pulse.setAttribute('r',150);
-  pulse.setAttribute('class','core-pulse');
-  silGroup.appendChild(pulse);
-
-  if(sex === 'fused'){
-    const leftG = document.createElementNS('http://www.w3.org/2000/svg','g');
-    leftG.setAttribute('clip-path','url(#clipLeft)');
-    const leftBody = document.createElementNS('http://www.w3.org/2000/svg','g');
-    leftBody.setAttribute('class','silhouette-fill sil-male');
-    leftBody.setAttribute('transform','translate(300,300) scale(0.78) translate(-300,-331.5)');
-    leftBody.innerHTML = silhouetteMarkup('male');
-    leftG.appendChild(leftBody);
-    silGroup.appendChild(leftG);
-
-    const rightG = document.createElementNS('http://www.w3.org/2000/svg','g');
-    rightG.setAttribute('clip-path','url(#clipRight)');
-    const rightBody = document.createElementNS('http://www.w3.org/2000/svg','g');
-    rightBody.setAttribute('class','silhouette-fill sil-female');
-    rightBody.setAttribute('transform','translate(300,300) scale(0.78) translate(-300,-331.5)');
-    rightBody.innerHTML = silhouetteMarkup('female');
-    rightG.appendChild(rightBody);
-    silGroup.appendChild(rightG);
-
-    const seam = document.createElementNS('http://www.w3.org/2000/svg','line');
-    seam.setAttribute('x1',300); seam.setAttribute('y1',140);
-    seam.setAttribute('x2',300); seam.setAttribute('y2',460);
-    seam.setAttribute('class','seam-line');
-    silGroup.appendChild(seam);
-
-    const tagM = document.createElementNS('http://www.w3.org/2000/svg','text');
-    tagM.setAttribute('x',255); tagM.setAttribute('y',175);
-    tagM.setAttribute('class','half-tag'); tagM.setAttribute('text-anchor','end');
-    tagM.textContent = 'M';
-    silGroup.appendChild(tagM);
-    const tagF = document.createElementNS('http://www.w3.org/2000/svg','text');
-    tagF.setAttribute('x',345); tagF.setAttribute('y',175);
-    tagF.setAttribute('class','half-tag'); tagF.setAttribute('text-anchor','start');
-    tagF.textContent = 'F';
-    silGroup.appendChild(tagF);
-  } else {
-    const bodyG = document.createElementNS('http://www.w3.org/2000/svg','g');
-    bodyG.setAttribute('class','silhouette-fill');
-    bodyG.setAttribute('transform','translate(300,300) scale(0.78) translate(-300,-331.5)');
-    bodyG.innerHTML = silhouetteMarkup(sex);
-    silGroup.appendChild(bodyG);
-  }
-  svg.appendChild(silGroup);
-
-  const titleMap = { fused:'Unified', female:'Female', male:'Male' };
-  const labelTitle = document.createElementNS('http://www.w3.org/2000/svg','text');
-  labelTitle.setAttribute('x',300); labelTitle.setAttribute('y',296);
-  labelTitle.setAttribute('class','center-title');
-  labelTitle.textContent = titleMap[sex];
-  svg.appendChild(labelTitle);
-
-  const labelSub = document.createElementNS('http://www.w3.org/2000/svg','text');
-  labelSub.setAttribute('x',300); labelSub.setAttribute('y',314);
-  labelSub.setAttribute('class','center-label');
-  labelSub.textContent = '10 SYSTEMS';
-  svg.appendChild(labelSub);
-
-  systems.forEach((sysData, i) => {
-    const start = i*sweep + GAP/2;
-    const end = (i+1)*sweep - GAP/2;
-    const mid = (start+end)/2;
-
-    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-    path.setAttribute('d', arcPath(R_OUT, R_IN, start, end));
-    path.setAttribute('fill', `url(#grad${i})`);
-    path.setAttribute('stroke', sysData.color);
-    path.setAttribute('stroke-width', '1.2');
-    path.setAttribute('class','seg seg-enter');
-    path.style.animationDelay = `${i*45}ms`;
-    path.dataset.idx = i;
-    path.dataset.mid = mid;
-
-    path.addEventListener('mouseenter', () => { if(lockedIdx===null) highlight(i); });
-    path.addEventListener('mouseleave', () => { if(lockedIdx===null) highlight(null); });
-    path.addEventListener('click', () => {
-      lockedIdx = (lockedIdx === i) ? null : i;
-      highlight(lockedIdx);
-    });
-    svg.appendChild(path);
-
-    // label
-    const lp = polar(CX,CY,(R_OUT+26),mid);
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('x', lp.x); text.setAttribute('y', lp.y);
-    text.setAttribute('class','seg-label');
-    text.setAttribute('text-anchor', (mid>90 && mid<270) ? 'end' : 'start');
-    text.dataset.idx = i;
-    text.textContent = sysData.name.replace(' System','');
-    svg.appendChild(text);
-
-    // count badge
-    const bp = polar(CX,CY,(R_OUT+R_IN)/2, mid);
-    const badge = document.createElementNS('http://www.w3.org/2000/svg','text');
-    badge.setAttribute('x', bp.x); badge.setAttribute('y', bp.y+3);
-    badge.setAttribute('text-anchor','middle');
-    badge.setAttribute('class','count-badge');
-    badge.textContent = sysData.organs.length;
-    svg.appendChild(badge);
-  });
-
-  buildLegend(systems);
-}
-
-function buildLegend(systems){
-  const legend = document.getElementById('legend');
-  legend.innerHTML = systems.map((s,i)=>`
-    <div class="legend-item" data-idx="${i}" style="color:${'inherit'}">
-      <span class="legend-dot" style="background:${s.color}; color:${s.color};"></span>
-      ${s.name}
-    </div>`).join('');
-  legend.querySelectorAll('.legend-item').forEach(item=>{
-    const i = +item.dataset.idx;
-    item.addEventListener('mouseenter', ()=>{ if(lockedIdx===null) highlight(i); });
-    item.addEventListener('mouseleave', ()=>{ if(lockedIdx===null) highlight(null); });
-    item.addEventListener('click', ()=>{
-      lockedIdx = (lockedIdx === i) ? null : i;
-      highlight(lockedIdx);
-    });
-  });
-}
-
-function highlight(idx){
-  document.querySelectorAll('.seg').forEach(el=>{
-    const i = +el.dataset.idx;
-    const isActive = i===idx;
-    el.classList.toggle('active', isActive);
-    el.classList.toggle('dim', idx!==null && i!==idx);
-    if(isActive){
-      const mid = +el.dataset.mid;
-      const rad = (mid-90) * Math.PI/180;
-      const dx = Math.cos(rad)*12, dy = Math.sin(rad)*12;
-      el.style.transform = `translate(${dx}px, ${dy}px) scale(1.03)`;
-    } else {
-      el.style.transform = '';
-    }
-  });
-  document.querySelectorAll('.seg-label').forEach(el=>{
-    const i = +el.dataset.idx;
-    el.classList.toggle('active', i===idx);
-    el.classList.toggle('dim', idx!==null && i!==idx);
-  });
-  document.querySelectorAll('.legend-item').forEach(el=>{
-    const i = +el.dataset.idx;
-    el.classList.toggle('active-legend', i===idx);
-  });
-  if(idx===null){
-    const total = DATA[currentSex].reduce((s,x)=>s+x.organs.length,0);
-    const most = DATA[currentSex].reduce((a,b)=> b.organs.length>a.organs.length ? b : a);
-    const fewest = DATA[currentSex].reduce((a,b)=> b.organs.length<a.organs.length ? b : a);
-    panelBody.innerHTML = `
-      <p class="placeholder">Hover or tap a segment on the wheel to view its organs and structures.</p>
-      <div class="stat-row"><span>Total components mapped</span><b>${total}</b></div>
-      <div class="stat-row"><span>Most detailed system</span><b>${most.name.replace(' System','')} · ${most.organs.length}</b></div>
-      <div class="stat-row"><span>Fewest components</span><b>${fewest.name.replace(' System','')} · ${fewest.organs.length}</b></div>
-    `;
-    return;
-  }
-  const sysData = DATA[currentSex][idx];
-  const nameMap = { fused:'unified', female:'female', male:'male' };
-  panelBody.innerHTML = `
-    <h2>${sysData.name}</h2>
-    <div class="meta">${sysData.organs.length} components · ${nameMap[currentSex]}</div>
-    <ul class="organ-list">
-      ${sysData.organs.map((o,j)=>{
-        const label = typeof o === 'string' ? o : o.label;
-        const tag = (typeof o !== 'string' && o.tag) ? `<span class="tag tag-${o.tag.toLowerCase()}">${o.tag}</span>` : '';
-        return `<li style="animation-delay:${j*35}ms"><span class="idx">${String(j+1).padStart(2,'0')}</span><span class="label">${label}</span>${tag}</li>`;
-      }).join('')}
-    </ul>
-  `;
-}
-
-document.querySelectorAll('.toggle-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    render(btn.dataset.sex);
-  });
+  sysListEl.appendChild(chip);
+});
+document.getElementById("showAll").addEventListener("click", ()=>{
+  activeSystems = new Set(Object.keys(SYSTEMS));
+  document.querySelectorAll(".sys-chip").forEach(c=>c.classList.add("active"));
+  render();
+});
+document.getElementById("clearSel").addEventListener("click", ()=>{
+  activeSystems = new Set();
+  document.querySelectorAll(".sys-chip").forEach(c=>c.classList.remove("active"));
+  render();
 });
 
-render('fused');
+/* ---------------- GENDER TOGGLE ---------------- */
+document.getElementById("btn-male").addEventListener("click", ()=>setGender("m"));
+document.getElementById("btn-female").addEventListener("click", ()=>setGender("f"));
+function setGender(g){
+  gender = g;
+  document.getElementById("btn-male").classList.toggle("active", g==="m");
+  document.getElementById("btn-female").classList.toggle("active", g==="f");
+  buildBody();
+  render();
+}
+
+/* ---------------- OPACITY SLIDER ---------------- */
+document.getElementById("opacitySlider").addEventListener("input", (e)=>{
+  const v = e.target.value/100;
+  const outline = document.getElementById("bodyOutline");
+  if(outline) outline.style.fillOpacity = 0.03 + v*0.22;
+});
+
+/* ---------------- BUILD SVG BODY ---------------- */
+const svg = document.getElementById("figure");
+
+function bodyShapeMarkup(g){
+  const shoulderW = g==="m" ? 92 : 80;
+  const hipW = g==="m" ? 70 : 84;
+  const waistIn = g==="m" ? 0 : 14;
+  return `
+    <g id="bodyOutline" fill="var(--skin)" stroke="var(--skin-edge)" stroke-width="1.4" style="fill-opacity:0.16">
+      <ellipse cx="150" cy="52" rx="34" ry="40"/>
+      <rect x="136" y="86" width="28" height="26" rx="8"/>
+      <path d="M ${150-shoulderW/2} 120
+               Q 150 105 ${150+shoulderW/2} 120
+               L ${150+hipW/2} 300
+               Q 150 ${315+waistIn*0.2} ${150-hipW/2} 300 Z"/>
+      <rect x="${150-shoulderW/2-30}" y="128" width="30" height="230" rx="15"/>
+      <rect x="${150+shoulderW/2}" y="128" width="30" height="230" rx="15"/>
+      <rect x="98" y="300" width="46" height="270" rx="20"/>
+      <rect x="156" y="300" width="46" height="270" rx="20"/>
+    </g>
+  `;
+}
+
+function buildBody(){
+  svg.innerHTML = bodyShapeMarkup(gender) + `<g id="organLayer"></g>`;
+  const layer = document.getElementById("organLayer");
+  ORGANS.forEach(o=>{
+    if(o.gender && o.gender!==gender) return;
+    const el = document.createElementNS("http://www.w3.org/2000/svg","circle");
+    el.setAttribute("cx", o.cx);
+    el.setAttribute("cy", o.cy);
+    el.setAttribute("r", o.r);
+    el.setAttribute("fill", SYSTEMS[o.system].color);
+    el.setAttribute("class","organ pulse");
+    el.style.color = SYSTEMS[o.system].color;
+    el.dataset.id = o.id;
+    el.addEventListener("mouseenter", (e)=>showTooltip(e,o));
+    el.addEventListener("mousemove", (e)=>moveTooltip(e));
+    el.addEventListener("mouseleave", hideTooltip);
+    el.addEventListener("click", ()=>selectOrgan(o.id));
+    layer.appendChild(el);
+  });
+  document.getElementById("opacitySlider").dispatchEvent(new Event("input"));
+}
+
+/* ---------------- RENDER (filter + selection state) ---------------- */
+function render(){
+  document.querySelectorAll(".organ").forEach(el=>{
+    const o = ORGANS.find(x=>x.id===el.dataset.id);
+    const on = activeSystems.has(o.system);
+    el.classList.toggle("dim", !on);
+    el.classList.toggle("selected", el.dataset.id===selectedId);
+  });
+}
+
+/* ---------------- TOOLTIP ---------------- */
+const tooltip = document.getElementById("tooltip");
+function showTooltip(e,o){
+  tooltip.textContent = o.name;
+  tooltip.classList.add("show");
+  moveTooltip(e);
+}
+function moveTooltip(e){
+  const rect = svg.parentElement.getBoundingClientRect();
+  tooltip.style.left = (e.clientX - rect.left) + "px";
+  tooltip.style.top = (e.clientY - rect.top) + "px";
+}
+function hideTooltip(){ tooltip.classList.remove("show"); }
+
+/* ---------------- SELECT / INFO PANEL ---------------- */
+function selectOrgan(id){
+  selectedId = id;
+  render();
+  const o = ORGANS.find(x=>x.id===id);
+  const sys = SYSTEMS[o.system];
+  document.getElementById("infoBody").innerHTML = `
+    <button class="info-close" onclick="clearSelection()">✕</button>
+    <p class="info-name">${o.name}</p>
+    <p class="info-latin">${o.latin}</p>
+    <span class="info-tag" style="color:${sys.color};border-color:${sys.color}55">${sys.label} system</span>
+    <div class="info-section"><h3>Function</h3><p>${o.fn}</p></div>
+    <div class="info-section"><h3>Common disorders</h3><p>${o.disorders}</p></div>
+    <div class="info-section"><h3>Quick fact</h3><p>${o.fact}</p></div>
+  `;
+}
+function clearSelection(){
+  selectedId = null;
+  render();
+  document.getElementById("infoBody").innerHTML = `<p class="info-empty">Select an organ on the figure to see its name, function, associated system, common disorders and a quick fact.</p>`;
+}
+window.clearSelection = clearSelection;
+
+/* ---------------- SEARCH ---------------- */
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
+searchInput.addEventListener("input", ()=>{
+  const q = searchInput.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
+  if(!q){ searchResults.style.display="none"; return; }
+  const matches = ORGANS.filter(o => (!o.gender || o.gender===gender) &&
+     (o.name.toLowerCase().includes(q) || o.latin.toLowerCase().includes(q)));
+  if(matches.length===0){ searchResults.style.display="none"; return; }
+  matches.slice(0,8).forEach(o=>{
+    const row = document.createElement("div");
+    row.textContent = `${o.name} — ${SYSTEMS[o.system].label}`;
+    row.addEventListener("click", ()=>{
+      selectOrgan(o.id);
+      searchResults.style.display="none";
+      searchInput.value = o.name;
+    });
+    searchResults.appendChild(row);
+  });
+  searchResults.style.display="block";
+});
+document.addEventListener("click",(e)=>{
+  if(!e.target.closest(".search-box")) searchResults.style.display="none";
+});
+
+/* ---------------- INIT ---------------- */
+buildBody();
+render();
 </script>
 </body>
 </html>
