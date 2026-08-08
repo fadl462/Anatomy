@@ -14,8 +14,8 @@
     --glow-soft:rgba(0,207,255,0.35);
     --text-hi:#eaf6ff;
     --text-lo:#8fa9c2;
-    --skin:rgba(150,190,220,0.10);
-    --skin-edge:rgba(150,210,255,0.35);
+    --skin:rgba(150,190,220,0.14);
+    --skin-edge:rgba(160,215,255,0.55);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
@@ -84,11 +84,12 @@
     50%{ filter: drop-shadow(0 0 12px currentColor) brightness(1.22); }
   }
 
-  .leader{ stroke:rgba(140,190,220,0.35); stroke-width:1; fill:none; transition:opacity .25s; }
+  .leader{ stroke:rgba(140,190,220,0.35); stroke-width:1; fill:none; transition:opacity .25s; pointer-events:none; }
   .leader.dim{ opacity:0.05; }
-  .organ-label{ font-size:9.5px; letter-spacing:.03em; fill:var(--text-lo); transition:opacity .25s, fill .2s; pointer-events:none; }
-  .organ-label.dim{ opacity:0.06; }
+  .organ-label{ font-size:9.5px; letter-spacing:.03em; fill:var(--text-lo); transition:opacity .25s, fill .2s; cursor:pointer; }
+  .organ-label.dim{ opacity:0.06; pointer-events:none; }
   .organ-label.selected{ fill:var(--text-hi); font-weight:600; }
+  .organ-label:hover{ fill:var(--glow); }
 
   .tooltip{ position:absolute; pointer-events:none; background:#04121e; border:1px solid var(--glow); color:var(--text-hi); font-size:12px; padding:5px 9px; border-radius:7px; transform:translate(-50%,-130%); white-space:nowrap; opacity:0; transition:opacity .12s; z-index:30;}
   .tooltip.show{ opacity:1; }
@@ -146,7 +147,7 @@
         <input type="text" id="searchInput" placeholder="Search an organ (e.g. liver, heart)…" autocomplete="off">
         <div class="search-results" id="searchResults"></div>
       </div>
-      <svg id="figure" viewBox="0 0 300 660" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="figure" viewBox="0 0 300 700" xmlns="http://www.w3.org/2000/svg"></svg>
       <div class="tooltip" id="tooltip"></div>
     </div>
 
@@ -194,7 +195,7 @@ const ORGANS = [
   { id:"skull", name:"Skull", latin:"Cranium", system:"skeletal", cx:150, cy:30, r:4,
     fn:"Encases and protects the brain, and anchors the facial structures.",
     disorders:"Skull fracture, craniosynostosis.", fact:"An adult skull is made of 22 individual bones fused together." },
-  { id:"ribcage", name:"Rib Cage", latin:"Thorax", system:"skeletal", cx:198, cy:178, r:5,
+  { id:"ribcage", name:"Rib Cage", latin:"Thorax", system:"skeletal", cx:183, cy:165, r:5,
     fn:"Protects the heart and lungs and assists breathing mechanics.",
     disorders:"Rib fracture, costochondritis.", fact:"Most people have 12 pairs of ribs, but roughly 1 in 200 people have an extra pair." },
   { id:"diaphragm", name:"Diaphragm", latin:"Diaphragma", system:"muscular", cx:150, cy:255, r:5,
@@ -212,40 +213,40 @@ const ORGANS = [
   { id:"heart", name:"Heart", latin:"Cor", system:"circulatory", cx:150, cy:238, r:12, label:true, side:"R",
     fn:"Pumps blood through the circulatory system, delivering oxygen and nutrients.",
     disorders:"Coronary artery disease, arrhythmia, heart failure.", fact:"An average adult heart beats about 100,000 times a day." },
-  { id:"liver", name:"Liver", latin:"Hepar", system:"digestive", cx:180, cy:272, r:12, label:true, side:"R",
+  { id:"liver", name:"Liver", latin:"Hepar", system:"digestive", cx:176, cy:272, r:11, label:true, side:"R",
     fn:"Filters the blood, produces bile for digestion, and metabolizes nutrients and drugs.",
     disorders:"Hepatitis, cirrhosis, fatty liver disease.", fact:"It's the only internal organ that can regenerate a significant part of itself." },
-  { id:"stomach", name:"Stomach", latin:"Ventriculus", system:"digestive", cx:120, cy:266, r:10, label:true, side:"L",
+  { id:"stomach", name:"Stomach", latin:"Ventriculus", system:"digestive", cx:124, cy:266, r:10, label:true, side:"L",
     fn:"Uses acid and enzymes to break down food before it moves to the intestines.",
     disorders:"Gastritis, peptic ulcers, GERD.", fact:"Its lining replaces itself roughly every few days to keep up with its own acid." },
   { id:"pancreas", name:"Pancreas", latin:"Pancreas", system:"endocrine", cx:150, cy:292, r:5,
     fn:"Produces digestive enzymes and the hormones insulin and glucagon that regulate blood sugar.",
     disorders:"Pancreatitis, diabetes mellitus.", fact:"It does double duty — most of it is a digestive gland, but small clusters of cells act as an endocrine gland." },
-  { id:"spleen", name:"Spleen", latin:"Lien", system:"lymphatic", cx:196, cy:243, r:6,
+  { id:"spleen", name:"Spleen", latin:"Lien", system:"lymphatic", cx:183, cy:243, r:6,
     fn:"Filters blood, recycles old red blood cells, and supports immune responses.",
     disorders:"Splenomegaly, splenic rupture.", fact:"You can live without it — other organs largely take over its functions if it's removed." },
   { id:"smallint", name:"Small Intestine", latin:"Intestinum tenue", system:"digestive", cx:150, cy:333, r:12, label:true, side:"L",
     fn:"Absorbs most nutrients and water from digested food.",
     disorders:"Celiac disease, Crohn's disease.", fact:"Uncoiled, it stretches roughly 6–7 meters (20+ feet) in an adult." },
-  { id:"largeint", name:"Large Intestine", latin:"Intestinum crassum", system:"digestive", cx:150, cy:373, r:13, label:true, side:"R",
+  { id:"largeint", name:"Large Intestine", latin:"Intestinum crassum", system:"digestive", cx:166, cy:345, r:11, label:true, side:"R",
     fn:"Absorbs remaining water and electrolytes and forms solid waste.",
     disorders:"Diverticulitis, colorectal conditions.", fact:"It hosts trillions of gut bacteria that help digest fiber and produce certain vitamins." },
-  { id:"kidneyL", name:"Left Kidney", latin:"Ren sinister", system:"urinary", cx:112, cy:308, r:7, label:true, side:"L",
+  { id:"kidneyL", name:"Left Kidney", latin:"Ren sinister", system:"urinary", cx:118, cy:308, r:7, label:true, side:"L",
     fn:"Filters waste and excess fluid from the blood to form urine.",
     disorders:"Kidney stones, chronic kidney disease.", fact:"Together, the kidneys filter about 180 liters of blood plasma every day." },
-  { id:"kidneyR", name:"Right Kidney", latin:"Ren dexter", system:"urinary", cx:188, cy:313, r:7, label:true, side:"R",
+  { id:"kidneyR", name:"Right Kidney", latin:"Ren dexter", system:"urinary", cx:182, cy:313, r:7, label:true, side:"R",
     fn:"Filters waste and excess fluid from the blood to form urine.",
     disorders:"Kidney stones, chronic kidney disease.", fact:"The right kidney usually sits slightly lower than the left to make room for the liver." },
-  { id:"bladder", name:"Bladder", latin:"Vesica urinaria", system:"urinary", cx:150, cy:404, r:7, label:true, side:"L",
+  { id:"bladder", name:"Bladder", latin:"Vesica urinaria", system:"urinary", cx:150, cy:370, r:6, label:true, side:"L",
     fn:"Stores urine until it's released from the body.",
     disorders:"Urinary tract infection, overactive bladder.", fact:"A healthy adult bladder can comfortably hold roughly 400–600 ml." },
   { id:"thyroid", name:"Thyroid", latin:"Glandula thyroidea", system:"endocrine", cx:150, cy:112, r:4,
     fn:"Produces hormones that regulate metabolism, energy use and growth.",
     disorders:"Hypothyroidism, hyperthyroidism, goiter.", fact:"It's shaped like a butterfly and sits just below the voice box." },
-  { id:"repro_m", name:"Reproductive System", latin:"Systema genitale masculinum", system:"reproductive", cx:150, cy:432, r:7, gender:"m", label:true, side:"R",
+  { id:"repro_m", name:"Reproductive System", latin:"Systema genitale masculinum", system:"reproductive", cx:150, cy:384, r:6, gender:"m", label:true, side:"R",
     fn:"Produces sperm and reproductive hormones (primarily testosterone).",
     disorders:"BPH, testicular conditions.", fact:"Hormone output from this system also influences bone density and muscle mass." },
-  { id:"repro_f", name:"Reproductive System", latin:"Systema genitale femininum", system:"reproductive", cx:150, cy:428, r:7, gender:"f", label:true, side:"R",
+  { id:"repro_f", name:"Reproductive System", latin:"Systema genitale femininum", system:"reproductive", cx:150, cy:382, r:6, gender:"f", label:true, side:"R",
     fn:"Produces eggs and reproductive hormones (estrogen and progesterone), and supports pregnancy.",
     disorders:"Endometriosis, PCOS.", fact:"The uterus can expand to roughly 500 times its normal size during pregnancy." },
 ];
@@ -301,22 +302,59 @@ document.getElementById("opacitySlider").addEventListener("input", (e)=>{
 /* ---------------- BUILD SVG BODY ---------------- */
 const svg = document.getElementById("figure");
 
+/* Original silhouette, built from proportion control points (not traced from any image).
+   Each point is [dx, y] where dx = horizontal distance from the centerline (x=150).
+   Sequence runs from the top of the head, down the right side of the body
+   (head -> neck -> shoulder -> arm out and back -> torso -> hip -> leg -> foot),
+   ending at the crotch. The left half is generated by mirroring. */
+const BODY_PROPORTIONS = {
+  m: [
+    [0,10],[26,40],[20,75],[13,98],[78,120],[88,175],[80,288],[64,360],
+    [68,420],[52,415],[48,355],[52,280],[56,140],[36,270],[42,340],
+    [48,420],[34,520],[30,585],[26,635],[40,670],[14,672],[16,635],
+    [18,585],[14,520],[16,420],[0,388]
+  ],
+  f: [
+    [0,8],[24,35],[30,92],[12,108],[66,122],[74,178],[66,288],[52,358],
+    [56,415],[46,415],[44,350],[46,278],[48,145],[30,265],[36,345],
+    [40,420],[30,520],[25,585],[20,632],[32,668],[10,670],[12,632],
+    [14,585],[10,520],[12,420],[0,386]
+  ]
+};
+
+function roundedClosedPath(pts, k=0.24){
+  const n = pts.length;
+  let d = "";
+  for(let i=0;i<n;i++){
+    const prev = pts[(i-1+n)%n], cur = pts[i], next = pts[(i+1)%n];
+    const d1x = cur.x-prev.x, d1y = cur.y-prev.y;
+    const d2x = next.x-cur.x, d2y = next.y-cur.y;
+    const len1 = Math.hypot(d1x,d1y) || 1, len2 = Math.hypot(d2x,d2y) || 1;
+    const cut1 = Math.min(len1*k, len1*0.5);
+    const cut2 = Math.min(len2*k, len2*0.5);
+    const p1 = { x: cur.x - d1x*(cut1/len1), y: cur.y - d1y*(cut1/len1) };
+    const p2 = { x: cur.x + d2x*(cut2/len2), y: cur.y + d2y*(cut2/len2) };
+    d += (i===0 ? `M ${p1.x.toFixed(1)} ${p1.y.toFixed(1)} ` : `L ${p1.x.toFixed(1)} ${p1.y.toFixed(1)} `);
+    d += `Q ${cur.x.toFixed(1)} ${cur.y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)} `;
+  }
+  return d + "Z";
+}
+
+function silhouettePath(g){
+  const right = BODY_PROPORTIONS[g].map(([dx,y])=>({x:150+dx, y}));
+  const left = BODY_PROPORTIONS[g].slice(1,-1).reverse().map(([dx,y])=>({x:150-dx, y}));
+  return roundedClosedPath(right.concat(left));
+}
+
 function bodyShapeMarkup(g){
-  const shoulderW = g==="m" ? 92 : 80;
-  const hipW = g==="m" ? 70 : 84;
-  const waistIn = g==="m" ? 0 : 14;
+  const hairTag = g==="f"
+    ? `<path d="M113 35 Q108 95 122 150 Q100 100 108 40 Z M187 35 Q192 95 178 150 Q200 100 192 40 Z"
+             fill="rgba(150,190,220,0.14)" stroke="var(--skin-edge)" stroke-width="1"/>`
+    : "";
   return `
     <g id="bodyOutline" fill="var(--skin)" stroke="var(--skin-edge)" stroke-width="1.4" style="fill-opacity:0.16">
-      <ellipse cx="150" cy="52" rx="34" ry="40"/>
-      <rect x="136" y="86" width="28" height="26" rx="8"/>
-      <path d="M ${150-shoulderW/2} 120
-               Q 150 105 ${150+shoulderW/2} 120
-               L ${150+hipW/2} 300
-               Q 150 ${315+waistIn*0.2} ${150-hipW/2} 300 Z"/>
-      <rect x="${150-shoulderW/2-30}" y="128" width="30" height="230" rx="15"/>
-      <rect x="${150+shoulderW/2}" y="128" width="30" height="230" rx="15"/>
-      <rect x="98" y="300" width="46" height="270" rx="20"/>
-      <rect x="156" y="300" width="46" height="270" rx="20"/>
+      <path d="${silhouettePath(g)}"/>
+      ${hairTag}
     </g>
   `;
 }
@@ -351,6 +389,7 @@ function buildBody(){
       text.setAttribute("class","organ-label");
       text.dataset.id = o.id;
       text.textContent = o.name;
+      text.addEventListener("click", ()=>selectOrgan(o.id));
       labelLayer.appendChild(text);
     }
 
