@@ -41,10 +41,10 @@
   .gender-toggle button{ border:none; background:transparent; color:var(--text-lo); padding:8px 18px; border-radius:999px; font-size:13px; cursor:pointer; font-weight:600; letter-spacing:.03em;}
   .gender-toggle button.active{ background:linear-gradient(135deg,#0091c9,#00cfff); color:#04121e; box-shadow:0 0 18px var(--glow-soft);}
 
-  .layout{ display:grid; grid-template-columns: 230px 1fr 300px; gap:18px; margin-top:20px; align-items:start;}
+  .layout{ display:grid; grid-template-columns: 230px minmax(0,1fr) minmax(260px,300px); gap:18px; margin-top:20px; align-items:start;}
   @media (max-width: 980px){ .layout{ grid-template-columns:1fr; } }
 
-  .card{ background:var(--panel); border:1px solid var(--edge); border-radius:16px; padding:16px; backdrop-filter: blur(6px); }
+  .card{ min-width:0; background:var(--panel); border:1px solid var(--edge); border-radius:16px; padding:16px; backdrop-filter: blur(6px); }
   .card h2{ font-size:11px; text-transform:uppercase; letter-spacing:.16em; color:var(--text-lo); margin:0 0 12px; }
 
   /* search */
@@ -70,19 +70,25 @@
   .opacity-row input{ width:100%; accent-color:var(--glow); }
 
   /* viewer */
-  .viewer{ position:relative; display:flex; flex-direction:column; align-items:center; padding:10px 10px 4px; min-height:640px; justify-content:center;}
+  .viewer{ position:relative; display:flex; flex-direction:column; align-items:center; padding:10px 10px 4px; min-height:700px; justify-content:flex-start;}
   .viewer-hint{ position:absolute; top:14px; left:18px; font-size:11px; color:var(--text-lo); letter-spacing:.05em;}
-  svg#figure{ width:100%; max-width:340px; height:auto; filter:drop-shadow(0 0 24px rgba(0,150,220,0.18)); }
+  svg#figure{ width:100%; max-width:460px; height:auto; margin-top:6px; filter:drop-shadow(0 0 30px rgba(0,150,220,0.16)); }
 
   .organ{ cursor:pointer; transition:filter .2s, transform .2s, opacity .25s; transform-origin:center; }
-  .organ:hover{ filter: drop-shadow(0 0 10px var(--glow)) brightness(1.4); transform:scale(1.14); }
-  .organ.pulse{ animation:pulse 1.8s ease-in-out infinite; }
-  .organ.dim{ opacity:0.08; filter:none !important; }
-  .organ.selected{ filter: drop-shadow(0 0 16px #fff) drop-shadow(0 0 26px var(--glow)); }
+  .organ:hover{ filter: drop-shadow(0 0 10px var(--glow)) brightness(1.4); transform:scale(1.18); }
+  .organ.pulse{ animation:pulse 2.6s ease-in-out infinite; }
+  .organ.dim{ opacity:0.06; filter:none !important; }
+  .organ.selected{ filter: drop-shadow(0 0 16px #fff) drop-shadow(0 0 24px var(--glow)); }
   @keyframes pulse{
-    0%,100%{ filter: drop-shadow(0 0 6px currentColor); }
-    50%{ filter: drop-shadow(0 0 16px currentColor) brightness(1.3); }
+    0%,100%{ filter: drop-shadow(0 0 4px currentColor); }
+    50%{ filter: drop-shadow(0 0 12px currentColor) brightness(1.22); }
   }
+
+  .leader{ stroke:rgba(140,190,220,0.35); stroke-width:1; fill:none; transition:opacity .25s; }
+  .leader.dim{ opacity:0.05; }
+  .organ-label{ font-size:9.5px; letter-spacing:.03em; fill:var(--text-lo); transition:opacity .25s, fill .2s; pointer-events:none; }
+  .organ-label.dim{ opacity:0.06; }
+  .organ-label.selected{ fill:var(--text-hi); font-weight:600; }
 
   .tooltip{ position:absolute; pointer-events:none; background:#04121e; border:1px solid var(--glow); color:var(--text-hi); font-size:12px; padding:5px 9px; border-radius:7px; transform:translate(-50%,-130%); white-space:nowrap; opacity:0; transition:opacity .12s; z-index:30;}
   .tooltip.show{ opacity:1; }
@@ -177,68 +183,69 @@ const SYSTEMS = {
 
 /* ---------------- ORGAN DATA ---------------- */
 /* cx, cy in the 300x660 viewBox. gender: "m" | "f" | null (both) */
+/* label: shows a permanent leader-line + text for major organs. side: L|R decides which margin it points to. */
 const ORGANS = [
-  { id:"brain", name:"Brain", latin:"Cerebrum", system:"nervous", cx:150, cy:52, r:16,
+  { id:"brain", name:"Brain", latin:"Cerebrum", system:"nervous", cx:150, cy:56, r:13, label:true, side:"L",
     fn:"Coordinates thought, movement, sensation and regulates the rest of the nervous system.",
     disorders:"Migraine, stroke, epilepsy.", fact:"Uses roughly 20% of the body's energy at rest despite being about 2% of body weight." },
-  { id:"spinalcord", name:"Spinal Cord", latin:"Medulla spinalis", system:"nervous", cx:150, cy:150, r:7,
+  { id:"spinalcord", name:"Spinal Cord", latin:"Medulla spinalis", system:"nervous", cx:136, cy:148, r:4,
     fn:"Relays signals between the brain and the rest of the body, and coordinates reflexes.",
     disorders:"Spinal cord injury, herniated disc compression.", fact:"Reflex actions, like pulling a hand off something hot, can happen before the signal even reaches the brain." },
-  { id:"skull", name:"Skull", latin:"Cranium", system:"skeletal", cx:150, cy:35, r:8,
+  { id:"skull", name:"Skull", latin:"Cranium", system:"skeletal", cx:150, cy:30, r:4,
     fn:"Encases and protects the brain, and anchors the facial structures.",
     disorders:"Skull fracture, craniosynostosis.", fact:"An adult skull is made of 22 individual bones fused together." },
-  { id:"ribcage", name:"Rib Cage", latin:"Thorax", system:"skeletal", cx:150, cy:190, r:9,
+  { id:"ribcage", name:"Rib Cage", latin:"Thorax", system:"skeletal", cx:198, cy:178, r:5,
     fn:"Protects the heart and lungs and assists breathing mechanics.",
     disorders:"Rib fracture, costochondritis.", fact:"Most people have 12 pairs of ribs, but roughly 1 in 200 people have an extra pair." },
-  { id:"diaphragm", name:"Diaphragm", latin:"Diaphragma", system:"muscular", cx:150, cy:258, r:8,
+  { id:"diaphragm", name:"Diaphragm", latin:"Diaphragma", system:"muscular", cx:150, cy:255, r:5,
     fn:"The primary muscle of breathing; contracts to draw air into the lungs.",
     disorders:"Diaphragmatic hernia, hiccups (spasms).", fact:"A hiccup is an involuntary diaphragm spasm — its exact purpose is still debated." },
-  { id:"lungL", name:"Left Lung", latin:"Pulmo sinister", system:"respiratory", cx:118, cy:210, r:13,
+  { id:"lungL", name:"Left Lung", latin:"Pulmo sinister", system:"respiratory", cx:123, cy:210, r:11, label:true, side:"L",
     fn:"Exchanges oxygen and carbon dioxide between inhaled air and the bloodstream.",
     disorders:"Asthma, pneumonia, COPD.", fact:"The left lung is smaller than the right to make room for the heart." },
-  { id:"lungR", name:"Right Lung", latin:"Pulmo dexter", system:"respiratory", cx:182, cy:210, r:14,
+  { id:"lungR", name:"Right Lung", latin:"Pulmo dexter", system:"respiratory", cx:177, cy:210, r:12, label:true, side:"R",
     fn:"Exchanges oxygen and carbon dioxide between inhaled air and the bloodstream.",
     disorders:"Asthma, pneumonia, COPD.", fact:"The right lung has three lobes; the left has only two." },
-  { id:"trachea", name:"Trachea", latin:"Trachea", system:"respiratory", cx:150, cy:170, r:6,
+  { id:"trachea", name:"Trachea", latin:"Trachea", system:"respiratory", cx:150, cy:170, r:4,
     fn:"The windpipe — carries air between the throat and the lungs.",
     disorders:"Tracheitis, tracheal stenosis.", fact:"Its wall is reinforced with C-shaped rings of cartilage so it never collapses." },
-  { id:"heart", name:"Heart", latin:"Cor", system:"circulatory", cx:150, cy:225, r:15,
+  { id:"heart", name:"Heart", latin:"Cor", system:"circulatory", cx:150, cy:238, r:12, label:true, side:"R",
     fn:"Pumps blood through the circulatory system, delivering oxygen and nutrients.",
     disorders:"Coronary artery disease, arrhythmia, heart failure.", fact:"An average adult heart beats about 100,000 times a day." },
-  { id:"liver", name:"Liver", latin:"Hepar", system:"digestive", cx:190, cy:270, r:14,
+  { id:"liver", name:"Liver", latin:"Hepar", system:"digestive", cx:180, cy:272, r:12, label:true, side:"R",
     fn:"Filters the blood, produces bile for digestion, and metabolizes nutrients and drugs.",
     disorders:"Hepatitis, cirrhosis, fatty liver disease.", fact:"It's the only internal organ that can regenerate a significant part of itself." },
-  { id:"stomach", name:"Stomach", latin:"Ventriculus", system:"digestive", cx:115, cy:262, r:12,
+  { id:"stomach", name:"Stomach", latin:"Ventriculus", system:"digestive", cx:120, cy:266, r:10, label:true, side:"L",
     fn:"Uses acid and enzymes to break down food before it moves to the intestines.",
     disorders:"Gastritis, peptic ulcers, GERD.", fact:"Its lining replaces itself roughly every few days to keep up with its own acid." },
-  { id:"pancreas", name:"Pancreas", latin:"Pancreas", system:"endocrine", cx:150, cy:283, r:8,
+  { id:"pancreas", name:"Pancreas", latin:"Pancreas", system:"endocrine", cx:150, cy:292, r:5,
     fn:"Produces digestive enzymes and the hormones insulin and glucagon that regulate blood sugar.",
     disorders:"Pancreatitis, diabetes mellitus.", fact:"It does double duty — most of it is a digestive gland, but small clusters of cells act as an endocrine gland." },
-  { id:"spleen", name:"Spleen", latin:"Lien", system:"lymphatic", cx:196, cy:245, r:9,
+  { id:"spleen", name:"Spleen", latin:"Lien", system:"lymphatic", cx:196, cy:243, r:6,
     fn:"Filters blood, recycles old red blood cells, and supports immune responses.",
     disorders:"Splenomegaly, splenic rupture.", fact:"You can live without it — other organs largely take over its functions if it's removed." },
-  { id:"smallint", name:"Small Intestine", latin:"Intestinum tenue", system:"digestive", cx:150, cy:320, r:13,
+  { id:"smallint", name:"Small Intestine", latin:"Intestinum tenue", system:"digestive", cx:150, cy:333, r:12, label:true, side:"L",
     fn:"Absorbs most nutrients and water from digested food.",
     disorders:"Celiac disease, Crohn's disease.", fact:"Uncoiled, it stretches roughly 6–7 meters (20+ feet) in an adult." },
-  { id:"largeint", name:"Large Intestine", latin:"Intestinum crassum", system:"digestive", cx:150, cy:355, r:14,
+  { id:"largeint", name:"Large Intestine", latin:"Intestinum crassum", system:"digestive", cx:150, cy:373, r:13, label:true, side:"R",
     fn:"Absorbs remaining water and electrolytes and forms solid waste.",
     disorders:"Diverticulitis, colorectal conditions.", fact:"It hosts trillions of gut bacteria that help digest fiber and produce certain vitamins." },
-  { id:"kidneyL", name:"Left Kidney", latin:"Ren sinister", system:"urinary", cx:118, cy:305, r:9,
+  { id:"kidneyL", name:"Left Kidney", latin:"Ren sinister", system:"urinary", cx:112, cy:308, r:7, label:true, side:"L",
     fn:"Filters waste and excess fluid from the blood to form urine.",
     disorders:"Kidney stones, chronic kidney disease.", fact:"Together, the kidneys filter about 180 liters of blood plasma every day." },
-  { id:"kidneyR", name:"Right Kidney", latin:"Ren dexter", system:"urinary", cx:182, cy:310, r:9,
+  { id:"kidneyR", name:"Right Kidney", latin:"Ren dexter", system:"urinary", cx:188, cy:313, r:7, label:true, side:"R",
     fn:"Filters waste and excess fluid from the blood to form urine.",
     disorders:"Kidney stones, chronic kidney disease.", fact:"The right kidney usually sits slightly lower than the left to make room for the liver." },
-  { id:"bladder", name:"Bladder", latin:"Vesica urinaria", system:"urinary", cx:150, cy:392, r:10,
+  { id:"bladder", name:"Bladder", latin:"Vesica urinaria", system:"urinary", cx:150, cy:404, r:7, label:true, side:"L",
     fn:"Stores urine until it's released from the body.",
     disorders:"Urinary tract infection, overactive bladder.", fact:"A healthy adult bladder can comfortably hold roughly 400–600 ml." },
-  { id:"thyroid", name:"Thyroid", latin:"Glandula thyroidea", system:"endocrine", cx:150, cy:130, r:6,
+  { id:"thyroid", name:"Thyroid", latin:"Glandula thyroidea", system:"endocrine", cx:150, cy:112, r:4,
     fn:"Produces hormones that regulate metabolism, energy use and growth.",
     disorders:"Hypothyroidism, hyperthyroidism, goiter.", fact:"It's shaped like a butterfly and sits just below the voice box." },
-  { id:"repro_m", name:"Reproductive System", latin:"Systema genitale masculinum", system:"reproductive", cx:150, cy:430, r:10, gender:"m",
+  { id:"repro_m", name:"Reproductive System", latin:"Systema genitale masculinum", system:"reproductive", cx:150, cy:432, r:7, gender:"m", label:true, side:"R",
     fn:"Produces sperm and reproductive hormones (primarily testosterone).",
     disorders:"BPH, testicular conditions.", fact:"Hormone output from this system also influences bone density and muscle mass." },
-  { id:"repro_f", name:"Reproductive System", latin:"Systema genitale femininum", system:"reproductive", cx:150, cy:425, r:10, gender:"f",
+  { id:"repro_f", name:"Reproductive System", latin:"Systema genitale femininum", system:"reproductive", cx:150, cy:428, r:7, gender:"f", label:true, side:"R",
     fn:"Produces eggs and reproductive hormones (estrogen and progesterone), and supports pregnancy.",
     disorders:"Endometriosis, PCOS.", fact:"The uterus can expand to roughly 500 times its normal size during pregnancy." },
 ];
@@ -314,16 +321,46 @@ function bodyShapeMarkup(g){
   `;
 }
 
+const LABEL_X = { L:14, R:286 };
+
 function buildBody(){
-  svg.innerHTML = bodyShapeMarkup(gender) + `<g id="organLayer"></g>`;
-  const layer = document.getElementById("organLayer");
+  svg.innerHTML = bodyShapeMarkup(gender) +
+    `<g id="leaderLayer"></g><g id="organLayer"></g><g id="labelLayer"></g>`;
+  const leaderLayer = document.getElementById("leaderLayer");
+  const organLayer = document.getElementById("organLayer");
+  const labelLayer = document.getElementById("labelLayer");
+  const ns = "http://www.w3.org/2000/svg";
+
   ORGANS.forEach(o=>{
     if(o.gender && o.gender!==gender) return;
-    const el = document.createElementNS("http://www.w3.org/2000/svg","circle");
+
+    if(o.label){
+      const lx = LABEL_X[o.side];
+      const line = document.createElementNS(ns,"line");
+      line.setAttribute("x1", o.cx); line.setAttribute("y1", o.cy);
+      line.setAttribute("x2", lx); line.setAttribute("y2", o.cy);
+      line.setAttribute("class","leader");
+      line.dataset.id = o.id;
+      leaderLayer.appendChild(line);
+
+      const text = document.createElementNS(ns,"text");
+      text.setAttribute("x", lx);
+      text.setAttribute("y", o.cy);
+      text.setAttribute("dy","3.4");
+      text.setAttribute("text-anchor", o.side==="L" ? "start" : "end");
+      text.setAttribute("class","organ-label");
+      text.dataset.id = o.id;
+      text.textContent = o.name;
+      labelLayer.appendChild(text);
+    }
+
+    const el = document.createElementNS(ns,"circle");
     el.setAttribute("cx", o.cx);
     el.setAttribute("cy", o.cy);
     el.setAttribute("r", o.r);
     el.setAttribute("fill", SYSTEMS[o.system].color);
+    el.setAttribute("stroke", "rgba(4,10,20,0.55)");
+    el.setAttribute("stroke-width", "1");
     el.setAttribute("class","organ pulse");
     el.style.color = SYSTEMS[o.system].color;
     el.dataset.id = o.id;
@@ -331,7 +368,7 @@ function buildBody(){
     el.addEventListener("mousemove", (e)=>moveTooltip(e));
     el.addEventListener("mouseleave", hideTooltip);
     el.addEventListener("click", ()=>selectOrgan(o.id));
-    layer.appendChild(el);
+    organLayer.appendChild(el);
   });
   document.getElementById("opacitySlider").dispatchEvent(new Event("input"));
 }
@@ -342,6 +379,15 @@ function render(){
     const o = ORGANS.find(x=>x.id===el.dataset.id);
     const on = activeSystems.has(o.system);
     el.classList.toggle("dim", !on);
+    el.classList.toggle("selected", el.dataset.id===selectedId);
+  });
+  document.querySelectorAll(".leader").forEach(el=>{
+    const o = ORGANS.find(x=>x.id===el.dataset.id);
+    el.classList.toggle("dim", !activeSystems.has(o.system));
+  });
+  document.querySelectorAll(".organ-label").forEach(el=>{
+    const o = ORGANS.find(x=>x.id===el.dataset.id);
+    el.classList.toggle("dim", !activeSystems.has(o.system));
     el.classList.toggle("selected", el.dataset.id===selectedId);
   });
 }
